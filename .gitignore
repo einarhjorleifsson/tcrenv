@@ -4,3 +4,7 @@
 .Ruserdata
 
 /.quarto/
+data-raw
+_site
+*.rds
+*.csv
