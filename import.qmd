@@ -1,0 +1,377 @@
+---
+title: "Import and export"
+message: FALSE
+warning: FALSE
+---
+
+```{r, width = 150, echo = FALSE}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/data_science.png")
+```
+
+
+Needed library: 
+
+```{r}
+library(tidyverse)
+library(janitor)
+```
+
+R is not a database software so one normally has to import the data from some other sources.
+
+## Entering data directly into R
+
+Although R is not a good data entry medium it is possible. E.g. to one can create vectors by:
+
+```{r}
+weight <- c( 1,  5,  3,  2,  6)
+length <- c(10, 17, 14, 12, 18)
+```
+
+Or one could generate a data frame by:
+
+```{r}
+d <- 
+  tibble(weight = c( 1,  5,  3,  2,  6),
+         length = c(10, 17, 14, 12, 18))
+```
+
+Or one could edit a data frame using the {[editData](https://cran.r-project.org/web/packages/editData/vignettes/editData.html)}-package. But that said R is not a good data entry medium and normally only done on an _ad hoc_ basis.
+
+## Importing data from plain text files
+
+A lot of functions in R deal with reading in text files in various formats. We have already used the `read_csv`-function.
+
+```{r}
+w <- read_csv(file = "https://heima.hafro.is/~einarhj/data/minke.csv")
+```
+
+Text files (like above) that reside on the web can normally be read in directly into R. However some other files like Excel can not. If we know the url-path of any files we can first download them before importing them. Here we will just use the minke csv-file as an introductory example, saving the file in the directory "data-raw" in our project directory using the `download.file`-function:
+
+```{r}
+if(!dir.exists("data-raw")) dir.create("data-raw")  # create if not exists
+download.file(url = "https://heima.hafro.is/~einarhj/data/minke.csv",
+              mode = "wb",
+              destfile = "data-raw/minke.csv")
+```
+
+We can then simply read the file from our computer:
+
+```{r, eval = FALSE}
+w <- read_csv("data-raw/minke.csv")
+```
+
+There are different read_xxx functions available in the {readr}-package that can be used to read in different formatted text files, check e.g.:
+
+```
+read_csv        # US style csv file (column separator is ',' and dec '.'
+read_csv2       # Alternative style csv file (column separator is ';' and dec ','
+read_tsv        # Tab deliminated data, US style decimal (.)
+read_tsv2       # Tab deliminated data, style decimal (,)
+read_delim      # The generic read function
+```
+
+There are also base-R functions like:
+
+```
+# Base R functions
+read.table      # Can read in most text files, has a lot of arguements
+                #  This may actually be your best friend
+read.fortran    # Fortran formated text
+readLines       # Raw lines from the file
+```
+
+To read the minke datafile using read.table we would do:
+
+```{r}
+w <- read.table("data-raw/minke.csv", sep = ",", header = TRUE)
+w |> glimpse()
+```
+
+Take note that the date is here a character, and to get the proper time-format we would need an additional step:
+
+```{r}
+w |> 
+  mutate(date = ymd_hms(date)) |> # more on this later
+  glimpse()
+```
+
+
+### On file paths
+
+The first argument in `read_xxx` functions is the file name, including the path. If the file is in the current working directory (use `getwd()` to get information of you current working directory) one can simply write the following command:
+
+```{r, eval = FALSE}
+w <- read_csv("minke.csv")
+```
+
+If the data file are in folder called "data-raw" **within** the working directory:
+```{r, eval = FALSE}
+w <- read_csv('data-raw/minke.csv')
+```
+
+One can also use absolute paths like:
+
+```{r eval = FALSE}
+read_csv("~/edu/crfmr/data-raw/minke.csv")
+read_csv("C:/Users/username/Documents/edu/crfmr/data-raw/minke.csv")
+```
+
+Absolute paths are however specific to each computer directory structure and it is thus not recommended to use if you are distributing the project to other collaborators.
+
+If the data is not in the current working directory tree one may use:
+
+```{r eval = FALSE}
+read_csv("../***.csv")             # One folder up
+read_csv("../../***.csv")          # Two folders up
+read_csv("../../data-raw/***.csv") # Two folders up, one folder down
+```
+
+Again, if sharing a project this may not be reproducable.
+
+### Sanity checks
+
+After the data has been imported one frequently checks the data to see what was imported is as expected. Some common functions are:
+
+```
+head(d)     # shows the top 6 lines of d
+tail(d)     # shows the last 6 lines of d
+dim(d)      # shows the num row and col of d
+names(d)    # gives the column names of d
+summary(d)  # quick summary statistics for the columns of d
+str(d)      # show the structure of the data, e.g. variable types
+glimpse(d)  # dplyr equivalent of str but turns sometimes more informative outputs
+```
+
+Take particular note that the class of each variable is as you expect. E.g. in the minke case one expects that the class for length is numeric (dbl) and class for date is a date-class (dttm), not e.g. character.
+
+### Arguments
+
+Lets generate a short inline csv-file:
+
+```{r}
+tmp <- 
+  "metadata 1: this data was collected on R/V Bjarni
+  metatdata 2: this research was funded by EU
+  ID,Date,Fishing area
+  1,2021-01-01,North
+  2,2021-01-02,North
+  NA,NA,NA
+  3,2021-02-28,South
+  4,2021-02-29,N/A
+  5,-9999,South"
+writeLines(tmp, "data-raw/tmp.csv")
+```
+
+As is very common with datafiles this file has:
+
+* Metadata: Here the first two lines
+* Missing categorical data represented as "N/A"
+* Missing date information represented as -9999
+
+
+Reading the tmp "csv"-file with just the default arguements gives us this:
+
+```{r, warning = TRUE}
+read_csv("data-raw/tmp.csv")
+```
+
+This dataset actually contains only one variable, the reason being that the first line in the data is interpreted as the variable names and since we have no comma there the read_csv function "thinks" that the data is only one variable. In order to get the data properly into R we need to overwrite some of the defaults:
+
+```{r}
+read_csv("data-raw/tmp.csv",
+         skip = 2,                 # skip the first two lines (the metadata)
+         na = c("N/A", "-9999"))   # Representation of missing values
+```
+
+Now in the above code we manage to get things roughly right. But take note that:
+
+* ID and date is a character, but we kind of expected a numerical and a date respectively
+* We kind of expected that obervations in line 3 would be interpreted as missing
+
+
+::: callout-tip
+# Exercise:
+
+* Try to fix the na-argument in order to account for "NA"
+* Check the help for `read_csv` and see if you add an arguement to skip the empty row (row 3)
+
+:::
+
+::: {.callout-tip collapse="true"}
+
+## Solution:
+
+```{r, eval = FALSE}
+read_csv(tmp,
+         skip = 2,                      # skip the first two lines
+         skip_empty_rows = TRUE,
+         na = c("NA", "N/A", "-9999"))  # Representation of missing values
+```
+
+But what happened to the date in ID 4??
+:::
+
+### Variable names
+
+The variables names in imported files are often lengthy, contain combination of upper and lower cases and often have spaces. This mean downstream coding is often cumbersome though doable. To make coding less so, it is strongly adviced that you:
+
+* Keep variable names as short as possible
+* Use only lower case letters
+* use "_" instead of a space in the name
+
+`janitor::clean_names` does the last two parts pretty well and `dplyr::rename` the first.
+
+```{r}
+d <- read_csv("data-raw/tmp.csv",
+         skip = 2,
+         na = c("NA", "N/A", "-9999")) |> 
+  clean_names() |> 
+  rename(area = fishing_area)
+d
+```
+
+
+::: callout-tip
+# Exercise:
+
+* Read the help file on `remove_empty`` and apply it to the above dataframe such that row 3, which has no data if dropped.
+* Check the difference with what you get when using `drop_na` in the pipeflow instead.
+
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution:
+
+```{r, eval = FALSE}
+d |> 
+  remove_empty(which = "rows")
+d |> 
+  drop_na()
+```
+
+:::
+
+## Writing files
+
+Writing a csv-file is as simple as:
+
+```{r}
+write_csv(w, "data-raw/my-minke.csv")
+```
+
+`write_rds()`  store data in R’s custom binary format called RDS preserving the exact object format.
+
+```{r}
+write_rds(w, "data-raw/my-minke.rds")
+```
+
+These can be read in using `read_rds()`:
+
+```{r eval = FALSE}
+read_rds("data-raw/my-minke.rds")
+```
+
+::: callout-tip
+# Exercise:
+
+* Write the "d" table as rds
+* Read the table in again
+
+:::
+
+::: {.callout-tip collapse="true"}
+
+## Solution:
+
+```{r, eval = FALSE}
+d |> write_rds("data-raw/tmp.rds")
+read_rds("data-raw/tmp.rds")
+```
+
+:::
+
+
+## Importing data from excel sheets
+
+The `readxl`-package provides "light-weight" support to read in Excel files directly into R. The minke data is avalaible in an excel format called [minke.xlsx](https://www.hafro.is/~einarhj/data/minke.xlsx). You can either download it onto your computer via the usual point and mouse click or use the `download.file` function:
+
+```{r}
+download.file(url = "https://heima.hafro.is/~einarhj/data/minke.xlsx",
+              destfile = "data-raw/minke.xlsx",
+              mode = "wb")
+library(readxl)
+d <- 
+  read_excel("data-raw/minke.xlsx")
+glimpse(d)
+```
+
+The `read_excel` function will by default read in the 1st data-sheet (checkout `args(read_excel)`. To get information on what sheets are in an excel file one can use the `excel_sheets` function:
+
+```{r}
+excel_sheets("data-raw/minke.xlsx")  # only one sheet here
+```
+
+If NAs are represented by something other than blank cells, set the na argument by e.g. if -9999 represents missing data then:
+
+```{r, eval = FALSE}
+read_excel("data-raw/minke.xlsx", na = "-9999") # actually no na values in this file
+```
+
+One can read in a certain cell range by:
+
+
+```{r}
+read_excel("data-raw/minke.xlsx", range = "A1:C10")
+```
+
+Sanity check on the object read in from Excel is **an absolute must** because the data can be notoriously corrupt because the user is free to do whatever in that framework either intentionally or by accident.
+
+
+## Other software connections
+
+Package `haven` provides functions for reading in SPSS, STATA and SAS files:
+
+```{r, eval = FALSE}
+library(haven)
+read_sas("path/to/file") ## SAS files
+read_por("path/to/file") ## SPSS portable files
+read_sav("path/to/file") ## SPSS data files
+read_dta("path/to/file") ## Stata files
+```
+
+Similarly in the `R.matlab` package there is a function that reads in matlab type of data:
+```{r, eval = FALSE}
+library(R.matlab)
+readMat('path/to/file') ## Matlab data files
+```
+
+## Importing directly from tip-files
+
+We can read tip-files directly into R using the function `foreign::read.dbf`. I you have not installed the {foreign}-package before you have to install it first by running:
+
+```{r eval = FALSE}
+install.packages("foreign")
+```
+
+Then do:
+
+```{r}
+library(tidyverse)
+library(foreign)
+```
+
+If you have a raw tip-file (the suffix is .DBF) you could try something like this:
+
+```{r, eval = FALSE}
+read.dbf("your/path/to/the/data/tip11.DBF", as.is = TRUE)
+```
+
+Of course you need to replace "your/path/to/the/data/tip11.DBF" with your path of your data on your own computer. If you do not have tip file, but want to give it a go run this code:
+
+```{r}
+# download some species lookup-TIP data taken from some anonymous country
+download.file(url = "https://heima.hafro.is/~einarhj/data/FISHCODE.DBF", destfile = "FISHCODE.DBF", mode = "wb")
+fishcode <- read.dbf("FISHCODE.DBF", as.is = TRUE)
+glimpse(fishcode)
+```
+

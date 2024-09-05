@@ -1,0 +1,454 @@
+---
+title: "Transformation 1"
+warning: FALSE
+message: FALSE
+---
+
+```{r, echo = FALSE}
+library(knitr)
+```
+
+```{r, echo = FALSE}
+cl = function(x, color = "blue"){
+  outputFormat = knitr::opts_knit$get("rmarkdown.pandoc.to")
+  if(outputFormat == 'latex')
+    paste("\\textcolor{",color,"}{", x ,"}",sep="")
+  else if(outputFormat == 'html')
+    paste("<font color='",color,"'>", x ,"</font>",sep="")
+  else
+    x
+}
+```
+
+```{r, width = 150, echo = FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/data_science.png")
+```
+
+## Preamble
+
+```{r echo=FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/group_by_summarise.png")
+```
+
+Commonly, when collating summaries by group, one wants to:
+
+-   **Split** up a big data structure into homogeneous pieces,
+-   **Apply** a function to each piece
+-   **Combine** all the results back together.
+
+For example, one might want to:
+
+-   Calculate summary statistics for each category (read: group)
+-   Perform group-wise transformations (read: apply) like summary or re-scaling/standardization
+-   Fit the same model to different subset of the data
+
+The tidyverse package, through the dplyr, comes to the rescue.
+
+-   Similar to ggplot2 they feature a Domain Specific Language (DSL) specially designed for data summaries.
+-   Developed by Hadley Wickam, the creator ggplot2 and other useful tools.
+
+Essentially dplyr offer a collection of simple but powerful commands (think of them as verbs) that facilitate this process:
+
+-   **filter**: keep observations (rows) matching criteria
+-   **select**: pick variables (columns) by name
+-   **arrange**: order the observations (rows) according to a variable (column)
+-   **mutate**: add new or modify existing variables (column)
+-   **summarise**: reduce variables to some summary values
+-   **group_by**: gives the group to apply the analysis functions to
+
+The structure of these commands is always the same:
+
+-   **First argument to the function is a data frame**
+-   Subsequent arguments say what to do with data frame, typically what variables to operate on.
+-   Always return a data frame
+-   this is the **key** difference of the tidyverse vs. base R approach
+-   It recognizes the variables (columns) of the data.frame as variables, that is one only need to write `variable_name` instead of `dat$variable_name`
+
+Each of the main dplyr-functions normally does one thing only (but does it "well") so one normally uses a combination of the above functions. Below we will jump right into using the pipe (`|>` or `%>%`).
+
+
+#### Reading material
+
+- [R for Data Science (2e)](https://r4ds.hadley.nz/data-transform.html)
+- [Data Transformation Cheat Sheet](https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-transformation.pdf)
+
+## The pipe
+
+We need to load the library {tidyverse} into our current session and we will use the minke-data for demonstation:
+
+```{r}
+library(tidyverse)
+w <- 
+  "ftp://ftp.hafro.is/pub/data/csv/minke.csv" |> 
+  read_csv()
+```
+
+The code structure above is a little bit different than used up to now:
+
+```{r, eval = FALSE}
+w <- read_csv("ftp://ftp.hafro.is/pub/data/csv/minke.csv")
+```
+
+and is just to gently introduce you to the `|>`-concept (often read as: "pipe"-concept) that needs a bit of extra explaining:
+
+- Noticed that the first argument ("file") in `read_csv` in the first code-chunk is missing. Writing just `read_csv()` on its own would give you an error: 'argument "file" is missing, with no default'.
+- The `|>` operator takes the stuff on the left (here actually in the line above) and places it as the **first** argument to function on the right hand side.
+
+Recomended that you "read" the `|>` as **"then"**. Hence the above can be read as:
+
+1. create a text string "ftp://ftp.hafro.is/pub/data/csv/minke.csv".
+2. **then** (`|>`) pass it as the **first** argument into the next function (`read_csv`).
+- Some notes on function and arguments can be found [here](bits.qmd#on-functions-and-arguments).
+3. store the data in object "w" (here declared in the first line).
+
+Some even go the whole way in code-writing from "left-to-right", like:
+
+```{r, eval = FALSE}
+"ftp://ftp.hafro.is/pub/data/csv/minke.csv" |> 
+  read_csv() ->
+  w
+```
+
+Note that Rstudio has a built in shortcut for the `|>` operator: \[ctrl\] + \[shift\] + M.
+
+## Operation on observations (rows)
+
+### **filter**: Extract observations
+
+```{r echo = FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/filter.png")
+```
+
+One can extract observations that meet logical criteria by using the `r cl("filter")` command. The first argument is the name of the data frame with subsequent argument(s) being logical expressions. E.g. one subsets the minke data containing only year 2004 (the years in the dataset are from 2003 to 2007) by:
+
+```{r}
+w |> filter(year == 2004)
+```
+
+Same as:
+
+```{r, eval = FALSE}
+w |> filter(year %in% 2004)
+```
+
+Only data from 2004 and onwards:
+
+```{r, eval = FALSE}
+w |> filter(year >= 2004)
+```
+
+Filter observations by some interval:
+
+```{r, eval = FALSE}
+w |> filter(year >= 2004, year < 2006)  # the "," here should be read as "and"
+w |> filter(year >= 2004 & year < 2006) # same as above, here more explicit
+w |> filter(between(year, 2004, 2005))  # same as above
+```
+
+All but the year 2004 would be:
+
+```{r, eval = FALSE}
+w |> filter(year != 2004)     # "!=" should be read as not equal too
+```
+
+But this would give year 2005 to 2007:
+
+```{r, eval = FALSE}
+w |> filter(year %in% 2005:2007)
+```
+
+Which would be the same as:
+
+```{r, eval = FALSE}
+filter(w, !year %in% 2003:2004)   # again "!" stands for "not" in R
+```
+
+Filter takes any logical statement:
+
+```{r, eval = FALSE}
+x == a    # x is equal to a
+x != a    # x is not equal to a
+x %in% a  # x is "in" a
+!x %in% a # x is "not in" a
+x > a    # x is greater than a
+x >= a   # x is greater or equal to a
+x < a    # x is less than a
+x <= a   # x is less or equal to a
+a & b    # a and b
+a | b    # a or b
+is.na(x) # is a equal to NA (missing)
+...      # ...
+```
+
+The arguments can operate on different variables. E.g. to extract mature males caught in 2007 one would write:
+
+```{r, eval = FALSE}
+w |> filter(maturity == "mature", sex == "Male", year == 2007)
+w |> filter(maturity == "mature" & sex == "Male" & year == 2007) # same thing, more explicit
+```
+
+NOTE: A "comma" is recognized as "AND". If one were to specify "OR" use the "\|":
+
+```{r, eval = FALSE}
+filter(w, maturity == "mature" | sex == "Male" | year == 2007)
+```
+
+::: callout-tip
+## Exercise
+-   Find all males caught in the northern area in 2006 and 2007
+-   Find all males that are either immature or pregnant
+-   Find all whales caught that did not have a maturity status determined
+-   Find all whales that were caught in year 2007 or were mature males
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution
+
+```{r, eval = FALSE}
+w |> filter(sex == "Male", area == "North", year %in% 2006:2007)
+w |> filter(sex == "Male", maturity %in% c("immature", "pregnant")) 
+w |> filter(is.na(maturity))
+w |> filter(year == 2007 | (maturity == "mature" & sex == "Male"))
+```
+:::
+
+### **arrange**: Order observations
+
+```{r echo=FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/arrange.png")
+```
+
+To sort the data we employ the `r cl("arrange")`-function. Sorting by length is as follows (in ascending order):
+
+```{r}
+w |> arrange(length)
+```
+
+and in descending order:
+
+```{r, eval = FALSE}
+w |> arrange(desc(length))
+```
+
+You can also arrange by more that one column:
+
+```{r, eval = FALSE}
+w |> arrange(sex, desc(length))
+```
+
+Above first orders the data by sex (alphabetical, first Female then Male) and then by increasing length.
+
+### distinct
+
+`distinct` can be used extract unique observations in a data frame. The command below would operate on all the variables in the dataframe (so if there were duplicate observations you would only get unique records):
+
+```{r, eval = FALSE}
+w |> distinct()
+```
+
+The minke data actally has distinct records so the above example is a bit meaningless. One however normally operates on selected variables like:
+
+```{r}
+w |> distinct(sex)
+w |> distinct(sex, maturity)   # so no record of a pregnant male!
+```
+
+If we wanted to get the distinct records in a particular order we could do:
+
+```{r}
+w |> 
+  distinct(sex, maturity) |> 
+  arrange(sex, maturity)
+```
+
+This is an example of combining the dplyr-functions in a single pipe-flow, something we will do a lot of in this course.
+
+
+## Operations on variables (columns)
+
+### **select**: Extract variables
+
+```{r echo = FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/select.png")
+```
+
+The `r cl("select")` functions allows you to extract certain variables of interest.
+
+Select columns by name:
+
+```{r}
+w |> select(id, sex, maturity)
+```
+
+Select all columns between length and age:
+
+```{r, eval = FALSE}
+w |> select(length:age)
+```
+
+You can also omit certain columns using negative indexing: for example you can select all columns except those between sex and stomach.weight
+
+```{r}
+w |> select(!sex:stomach.weight)
+```
+
+A combination of non-adjacent variables to drop could be written as:
+
+```{r, eval = FALSE}
+w |> select(-c(weight, maturity))
+```
+
+You can select all categorical values by:
+
+```{r}
+w |> select(where(is.character))
+```
+
+
+The `r cl("select")` function has some useful helper function:
+
+```{r, eval=FALSE}
+starts_with('stomach')  # Finds all columns that start with "stomach"
+ends_with('weight')     # Finds all columns that end with "weight"
+contains('mach')        # Finds all columns that contain "mach"
+```
+
+And you can of course combine these at will:
+
+```{r}
+w |> select(id, length, starts_with('stomach'))
+```
+
+`r cl("select")` also allows you to rename columns as you select them:
+
+```{r}
+w |> select(id, yr = year)
+```
+
+but this only selects the requested columns, others are dropped.
+
+### **rename**: Rename columns
+
+```{r echo = FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/rename.png")
+```
+
+If you just want to rename a couple of columns in the data frame leaving the other columns intact you can use the function `r cl("rename")`:
+
+```{r}
+w |> rename(time = date, stomach_volume = stomach.volume)
+```
+
+::: callout-tip
+## Exercise
+-   Select age, length and id from the minke dataset, and rename id to "whale_id"
+-   Select the id column and all columns that contain the text "weight".
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution
+```{r, eval = FALSE}
+w |> select(age, length, whale_id = id)
+w |> select(id, contains("weight"))
+```
+:::
+
+
+### **mutate**: Compute new variable
+
+```{r echo=FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/mutate.png")
+```
+
+`r cl("mutate")` allows you to add new columns to your data. Let's calculate the approximate weight:
+
+```{r}
+w |> 
+  select(id, length, weight) |> 
+  mutate(computed_weight = 0.00001 * length^3)
+```
+
+You can also do more than one "mutation":
+
+```{r}
+w |> 
+  select(id, length, weight) |> 
+  mutate(computed_weight = 0.00001 * length^3,
+         weight2 = ifelse(is.na(weight), 0.00001 * length^3, weight))
+```
+
+To make our lives a bit easier `r cl("mutate")` "remembers" earlier transformations within the sequence:
+
+```{r, eval = FALSE}
+w |> 
+  select(id, length, weight) |> 
+  mutate(computed_weight = 0.00001 * length^3,
+         approx_weight = ifelse(is.na(weight), computed_weight, weight))
+```
+
+One can also overwrite existing variables:
+
+```{r, eval = FALSE}
+w |> 
+  select(id, length, weight) |> 
+  mutate(computed_weight = 0.00001 * length^3,
+         weight = ifelse(is.na(weight), computed_weight, weight))
+```
+
+And even not create a temporary variable (here computed_weight):
+
+```{r eval = FALSE}
+w |> 
+  select(id, length, weight) |> 
+  mutate(weight = ifelse(is.na(weight),  0.00001 * length^3, weight))
+```
+
+
+::: callout-tip
+# Exercise
+
+Calculate the [Fullton's condition factor](https://en.wikipedia.org/wiki/Standard_weight_in_fish) for whales where observations of weights exists. The formula is:
+
+$K=100(W/L^3)$
+
+Note: the weights need to be in grams, the length in cm
+
+Hint: Use the function `is.na` (in the sense of `!is.na`) to filter out records with observed weight.
+
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution
+
+```{r eval = FALSE}
+w |> 
+  filter(!is.na(weight)) |> 
+  select(id, length, weight) |> 
+  mutate(K = 100 * (1000 * weight / length^3))
+
+# another way:
+w |> 
+  select(id, length, weight) |> 
+  drop_na() |> 
+  mutate(K = 100 * (1000 * weight / length^3))
+```
+
+:::
+
+# Summarise cases
+
+## **summarise**:
+
+```{r echo=FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/summarise.png")
+```
+
+To summarise data one uses the `r cl("summarise")`-function. Below we calculate the number of observations (using the `cl("n")`-function and the mean minke length.
+
+```{r}
+w |> 
+  summarise(n.obs = n(),
+            ml = mean(length, na.rm = TRUE))
+```
+
+

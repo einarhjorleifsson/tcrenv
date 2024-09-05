@@ -1,0 +1,172 @@
+---
+title: "Tidy dataframes"
+warning: FALSE
+message: FALSE
+---
+
+
+## Preamble
+
+```{r out.width = "75%", echo = FALSE, fig.cap = "From: Grolemund and Wickham"}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/data_science.png")
+```
+
+```
+The defintion of a tidy dataset: 
+   Each column is a variable, and each row is an observation.
+```
+
+Having a tidy dataset is fundamental in the tidyverse code-flow:
+
+```
+Tidy datasets are all alike but every messy dataset is messy in its own way.
+                                                           - Hadley Wickham
+```
+
+Although you can work (read: code) starting off with an untidy dataset you will soon hit troubles
+
+## Typical fisheries data
+
+* In fisheries science we tend to have very similar variables across different types of data:
+  * Landings monitoring (full census or sampled based)
+  * Fishermen's logbooks
+  * Scientific fisheries resource surveys (trawl, accoustic, UV, ...)
+  * Continuous positioning data (AIS, VMS, GIS)
+* If we have similar structures we may in the end be able to use very similar code-flow to explore, transform and vizualize different datasets.
+
+::: callout-tip
+#### Excercise
+
+Group discussion:
+
+* What common variables may we be measuring in the data-sets mentioned above.
+* How should one structure the data
+
+:::
+
+## Wide data-table
+
+An **untidy** version of the Icelandic bottom trawl survey can be read in via: 
+
+```{r}
+library(tidyverse)
+sur <- 
+  read_csv("https://heima.hafro.is/~einarhj/data/is_smb-wide.csv")
+sur |> glimpse()
+```
+
+If you are working in Excel this wide format is very common. Lets isolate the biological variables but also retain the station id:
+
+```{r}
+wide <- 
+  sur |> 
+  select(id, cod_kg:monkfish_n)
+wide |> glimpse()
+```
+
+
+::: callout-tip
+#### Excercise
+
+* Identify the variables in the wide data frame
+* Identify the measurements in the wide data frame
+
+:::
+
+
+## pivot_longer
+
+To make a wide table longer, we can employ the `pivot_longer`-function. Lets first focus just on the abundance measurments:
+
+```{r}
+long <- 
+  wide %>% 
+  # select just the abundance variables
+  select(id, ends_with("_n")) %>% 
+  pivot_longer(cols = -id, names_to = "species", values_to = "n") %>% 
+  mutate(species = str_remove(species, "_n"))
+glimpse(long)
+```
+
+So we have moved from a dataframe that was 19846 rows with 7 columns to a dataframe of 119076 (19846 stations x 6 species) rows with only 3 columns, each being a variable:
+
+-   **id**: Station id
+-   **species**: Species name
+-   **n**: Abundance (standardized to 4 nautical miles)
+
+This latter (longer) format is the proper format for efficient computer programming. The following exercise should illustrate that.
+
+::: callout-tip
+#### Excercise
+
+1. Use the wide-dataframe above and write a code to calculate the median abundance (\*\*\*\_n column) for each species
+2. Use the long-dataframe above and write a code to calculate the median abundance for each species
+3. Ammend the long-dataframe code to include min, max and mean abundance.
+4. Would you like to try adding the calculation of the min, max and mean on the wide-dataframe (item 1 above)?
+
+:::
+
+::: {.callout-tip collapse="true"}
+### Solution:
+
+```{r, eval = FALSE}
+wide %>% 
+  summarise(cod = median(cod_n),
+            haddock = median(haddock_n),
+            saithe = median(saithe_n),
+            wolfish = median(wolffish_n),
+            plaice = median(plaice_n),
+            monkfish = median(monkfish_n))
+long %>% 
+  group_by(species) %>% 
+  summarise(median = median(n),
+            mean = mean(n),
+            min = min(n),
+            max = max(n))
+```
+:::
+
+
+## pivot_wider
+
+When reconstructing untidy tables we sometimes may need to make a long table wider again. We may actually also want to make long table wider in our communications.
+
+In the above example we only made a long table for abundance (n). We could modify the above code for the biomass (kg). Doing all in one step requires the use of `pivot_wider`, the steps being:
+
+1.  Make a table containing id, current variable (cod_n, cod_kg, ...) and the corresponding value (abundance or biomass)
+2.  Separate the value measured (kg or n) from the species name
+3.  Generate separate columns for abundance (n) and biomass (kg)
+
+```{r}
+long <-
+  wide %>% 
+  # step 1
+  pivot_longer(cols = -id, names_to = "variable", values_to = "value") |> 
+  # step 2 
+  separate(variable, sep = "_", into = c("species", "variable")) |> 
+  # step 3
+  pivot_wider(names_from = variable, values_from = value)
+```
+
+
+::: callout-tip
+#### Excercise
+
+* Run each code step above on the wide-table and observe the results:
+
+```{r, eval = FALSE}
+step1 <- wide |> pivot_longer(-id)
+glimpse(step1)
+step2 <- step1 |> separate(name, sep = "_", into = c("species", "variable"))
+glimpse(step2)  
+step3 <- step2 |> pivot_wider(names_from = variable)
+glimpse(step3)
+```
+
+:::
+
+## Further reading
+
+As said above "every messy dataset is messy in its own way". This means that it is difficult to generalize how to tidy e.g. your data (if they are untidy). In the r4ds book there are good general chapter ([Data tidying](https://r4ds.hadley.nz/data-tidy.html)) that may help you along your own path towards tidyness.
+
+

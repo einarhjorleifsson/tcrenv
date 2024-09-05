@@ -1,0 +1,340 @@
+---
+title: "Transformation 2"
+warning: FALSE
+message: FALSE
+---
+
+```{r, echo = FALSE}
+library(knitr)
+library(grid)
+```
+
+
+```{r, width = 150, echo = FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/data_science.png")
+```
+
+# Preamble
+
+------------------------------------------------------------------------
+
+```{r echo=FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/group_by_summarise.png")
+```
+
+Commonly, when collating summaries by group, one wants to:
+
+-   **Split** up a big data structure into homogeneous pieces,
+-   **Apply** a function to each piece
+-   **Combine** all the results back together.
+
+#### Reading material
+
+- [R for Data Science (2e)](https://r4ds.hadley.nz/transform.html)
+- [Data Transformation Cheat Sheet](https://github.com/rstudio/cheatsheets/raw/master/data-transformation.pdf)
+
+# Libraries and data
+
+```{r}
+library(tidyverse)
+w <- read_csv("https://heima.hafro.is/~einarhj/data/minke.csv")
+```
+
+
+# Summarise cases
+
+## **summarise**:
+
+```{r echo=FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/summarise.png")
+```
+
+To summarise data one uses the `summarise`-function. Below we calculate the number of observations (using the `n`-function and the mean minke length.
+
+```{r}
+w |> 
+  summarise(n.obs = n(),
+            ml = mean(length, na.rm = TRUE))
+```
+
+## **group_by**:
+
+```{r echo=FALSE}
+include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/group_by.png")
+```
+
+The power of the command `summarise` is revealed when used in conjunction with `group_by`-function. The latter functions splits the data into groups based on one or multiple variables. E.g. one can split the minke table by maturity:
+
+```{r}
+w |> 
+  group_by(maturity)
+```
+
+The table appears "intact" because it still has 190 observations but it has 6 groups, representing the different values of the maturity scaling in the data (anoestrous, immature, mature, pregnant, pubertal and "NA").
+
+The `summarise`-command respects the grouping, as shown if one uses the same command as used above, but now on a dataframe that has been grouped:
+
+```{r}
+w |> 
+  group_by(maturity) |> 
+  summarise(n.obs = n(),
+            mean = mean(length))
+```
+
+::: callout-tip
+## Excercise
+
+- Calculate the number of observations and minimum, median, mean, standard deviation and standard error of whale lengths in each year
+- The function names in R are:
+- n
+- min
+- max
+- median
+- mean
+- sd
+
+The function for standard error is not availble in R. A remedy is that you use college statistical knowledge to derive them from the appropriate variables you derived above.
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution
+```{r, eval = FALSE}
+w |> 
+  group_by(year) |> 
+  summarise(n = n(),
+            min = min(length),
+            max = max(length),
+            median = median(length),
+            mean = mean(length),
+            sd = sd(length),
+            se = sd / sqrt(n))
+```
+:::
+
+
+Note: If you would not be using the pipe-code-flow your code would be something like this:
+
+```{r, eval = FALSE}
+summarise(group_by(w, year),
+          n = n(),
+          min = min(length))  # etc.
+```
+
+Shown because you are bound to come accross code like this.
+
+## Multiple group splitting
+
+
+```{r}
+w |> 
+  group_by(maturity, year) |> 
+  summarise(n = n(),
+            min = min(length),
+            max = max(length),
+            median = median(length),
+            mean = mean(length),
+            sd = sd(length),
+            se = sd / sqrt(n),
+            .groups = "drop") |> 
+  knitr::kable(digits = 2)
+```
+
+
+# Joins
+
+Normally the data we are interested in working with do **not** reside in one table. E.g. for a typical survey data one stores a "station table" separate from a "detail" table. The surveys could be anything, e.g. catch sampling at a landing site or scientific trawl or UV-surveys.
+
+Lets read in the [Icelandic groundfish survey tables](data.qmd) in such a format:
+
+```{r}
+station <- 
+  read_csv("https://heima.hafro.is/~einarhj/data/is_smb_stations.csv")
+biological <- 
+  read_csv("https://heima.hafro.is/~einarhj/data/is_smb_biological.csv")
+station %>% select(id:lat1) %>%  arrange(id) %>% glimpse()
+biological %>% arrange(id) %>% glimpse()
+```
+
+Here the information on the station, such as date, geographical location are kept separate from the detail measurments that are performed at each station (weight and numbers by species). The records in the station table are unique (i.e. each station information only appear once) while we can have more than one species measured at each station. Take note here that the biological table does not contain records of species that were not observed at that station. The link between the two tables, in this case, is the variable id.
+
+Take also note that there are 6 species in the data
+
+```{r}
+biological |> count(species)
+```
+
+but that the number of records by species is different between species. E.g. there are 19425 records of cod (out of 19846 stations) but only 2038 records of monkfish. Not storing zero records is quite common in databases. It is thus the responsibility of the user to understand the structure of the data and how to deal with zero's vs. missing data (NA) in the downstream analysis.
+
+## **left_join**: Matching values from y to x
+
+```{r echo = FALSE}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/left_join.png")
+```
+
+Lets say we were interested in combining the geographical position and the species records from **one** station:
+
+```{r}
+station %>% 
+  select(id, date, lon1, lat1) %>% 
+  filter(id == 29654) %>% 
+  left_join(biological)
+```
+
+Take note here: 
+
+* The joining is by common variable name in the two tables (here id)
+* That we only have records of fours species in this table, again a value of zero for a species is not stored in the data.
+
+If we were to want to obtain the records for monkfish from this survey we could do:
+
+
+```{r}
+d <- 
+  station %>% 
+  select(id, date, lon1, lat1) |> 
+  left_join(biological |> 
+              filter(species == "monkfish"))
+d
+```
+
+Now we have 19846 records, but most of them have missing mass (kg) and abundance (n). To account for the zeros we would need to do the following additional steps:
+
+```{r}
+d <- 
+  d |> 
+  mutate(species = replace_na(species, "monkfish"),
+         kg = replace_na(kg, 0),
+         n = replace_na(n, 0))
+d
+```
+
+So only now would we able to do some summary statistics like the mean catch and standard deviations. Lets just use the inbuilt ggplot function to do that and get a plot at the same time:
+
+```{r}
+d |> 
+  mutate(year = year(date)) |> 
+  ggplot(aes(year, kg)) +
+  stat_summary(fun.data = "mean_cl_boot")
+```
+
+If we had done this without considering zero stations we have:
+
+```{r}
+d |> 
+  mutate(year = year(date)) |> 
+  filter(kg != 0) |> 
+  ggplot(aes(year, kg)) +
+  stat_summary(fun.data = "mean_cl_boot")
+```
+
+Ergo: When working with data in general it is always important to think about if missingness constitutes a zero or a true NA.
+
+## **right_join**: Matching values from x to y
+
+```{r echo = FALSE}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/right_join.png")
+```
+
+This is really the inverse of left_join.
+
+## **inner_join**: Retain only rows with matches
+
+```{r echo = FALSE}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/inner_join.png")
+```
+
+Example of only joining station information with monkfish, were monkfish was recorded:
+
+```{r}
+station %>% 
+  inner_join(biological %>% 
+               filter(species == "monkfish"))
+```
+
+## **full_join**: Retain all rows
+
+```{r echo = FALSE}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/full_join.png")
+```
+
+```{r}
+station %>% 
+  full_join(biological %>% 
+              filter(species == "monkfish")) %>% 
+  select(id, species:n)
+```
+
+Here all the stations records are retained irrepsective if monkfish was caught or not.
+
+::: callout-tip
+#### Excercise
+
+Run through this set of code that supposedly mimics the pictograms above:
+
+```{r, eval = FALSE}
+x <- tibble(A = c("a", "b", "c"),
+            B = c("t", "u", "v"),
+            C = c(1, 2, 3))
+y <- tibble(A = c("a", "b", "d"),
+            B = c("t", "u", "w"),
+            D = c(3, 2, 1))
+
+left_join(x, y)
+right_join(x, y)
+left_join(y, x)
+inner_join(x, y)
+full_join(x, y)
+```
+:::
+
+
+# Combine cases (bind)
+
+------------------------------------------------------------------------
+
+## **bind_rows**: One on top of the other as a single table.
+
+```{r echo = FALSE}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/bind_rows.png")
+```
+
+## **union**: Rows in x **or** y
+
+```{r echo = FALSE}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/union.png")
+```
+
+## **intersect**: Rows in x **and** y.
+
+```{r echo = FALSE}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/intersect.png")
+```
+
+## **setdiff**: Rows in x but not y
+
+```{r echo = FALSE}
+knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/setdiff.png")
+```
+
+::: callout-tip
+#### Excercise
+
+Run through this set of code that supposedly mimics the pictograms above:
+
+```{r, eval = FALSE}
+x <- tibble(A = c("a", "b", "c"),
+            B = c("t", "u", "v"),
+            C = c(1, 2, 3))
+
+y <- tibble(A = c("c", "d"),
+            B = c("v", "w"),
+            C = c(3, 4))
+bind_rows(x, y)
+union(x, y)
+intersect(x, y)
+setdiff(x, y)
+setdiff(y, x)
+```
+:::
+
+

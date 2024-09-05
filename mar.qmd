@@ -1,0 +1,15 @@
+---
+title: "Quering MFRI databases"
+---
+
+## Preamble
+
+There are a lot of different ...
+
+```{r}
+con <- ROracle::dbConnect(DBI::dbDriver("Oracle"), dbname = "sjor")
+dplyr::tbl(con, dbplyr::in_schema("CHANNEL", "STOD_V")) |> dplyr::glimpse()
+```
+
+
+
