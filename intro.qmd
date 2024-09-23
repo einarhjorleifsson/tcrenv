@@ -300,8 +300,8 @@ If you are interested to know more about the data and how it was obtained check 
 
 The course material is open source, meaning that the source code is made freely available and may be redistributed and modified.
 
--   The source code for the course material is located (for now) at: <https://github.com/fishvice/crfmr>
--   The course product is rendered at: <https://heima.hafro.is/~einarhj/groftp>
+-   The source code for the course material is located (for now) at: <https://github.com/einarhjorleifsson/tcrenv>
+-   The course product is rendered at: <https://heima.hafro.is/~einarhj/edu/tcrenv_2024-hafro>
 
 The material is largely based on the works of [R for Data Science (2e)](https://r4ds.hadley.nz)
 

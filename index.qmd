@@ -5,42 +5,57 @@ message: FALSE
 
 ## Introduction to R - MFRI, fall 2024
 
-The target group of this course are lots that have never or only very occasionally worked in R.
+The course is aimed at staff members with no or very limited experience in R. It will cover the fundamental/generic basis of the grammar of data and graphics and reproducible document writing where R is used as the sole working medium. The framework introduced is based on using a set of packages that use internally consistent R-dialect that falls under the tidyverse umbrella.
 
-Dates below are suggestative, pend on approval and room availability
+This space is **here**: [https://heima.hafro.is/~einarhj/edu/tcrenv_2024-hafro](https://heima.hafro.is/~einarhj/edu/tcrenv_2024-hafro)
 
-### 2024-09-16 09:00 - 12:00  (Monday)
+
+### Objective
+
+The objective of the course is to provide participants with a solid foundation in efficient use of the R environment using various types of marine data sets as case examples. Emphasis will be put on data munging and literate programming starting with importing "raw" data and culminating with deliverance of publishable output produced from a single coded document file.
+
+By the end of the course, the participants:
+
+* Will be able to import data from multitude of sources computer (i.e. own text files, excel, access, sql databases).
+* Will be able to clean, manipulate, explore, summarize and graph data.
+* Will be able to apply the principle of reproducible analysis and report writing from A through Z which are then deliverable through any of the current three common deliverable formats: .html, .pdf and .docx.
+
+## Agenda
+
+This is space in the making meaning that the dates and the content is preliminary.
+
+### 2024-09-23 09:00 - 12:00  (Monday)
 
 - [Introduction](intro.qmd)
 - [Getting started with ggplot](visualization1.qmd)
 
-### 2024-09-17 09:00 - 12:00  (Tuesday)
+### 2024-09-24 09:00 - 12:00  (Tuesday)
 
 - [Data import](import.qmd)
 - [A little base R](baser.qmd)
 - [Data transformation 1](transformation1.qmd)
 
-### 2024-09-18 09:00 - 12:00  (Wednesday)
+### 2024-09-25 09:00 - 12:00  (Wednesday)
 
 - [Data transformation 2](transformation2.qmd)
 - [Quering MFRI databases](mar.qmd)
 
-### 2024-09-19 09:00 - 12:00  (Thursday)
+### 2024-09-26 09:00 - 12:00  (Thursday)
 
 - [Tidy datasets](tidy.qmd)
 - [Map plotting](maps.qmd)
 
-### 2024-09-23 09:00 - 12:00  (Monday)
+### 2024-10-01 09:00 - 12:00  (Tuesday)
 
 - [Reproducable documents](quarto.qmd)
 - [Working with dates and time]()
 
-### 2024-09-24 09:00 - 12:00  (Tuesday)
+### 2024-10-02 09:00 - 12:00  (Wednesday)
 
 - [Introduction to spatial data](spatial)
 - [Pending]()
 
-### 2024-09-25 09:00 - 12:00 (Wednesday)
+### 2024-10-03 09:00 - 12:00 (Thursday)
 
 - [Pending]()
 - [Pending]()
