@@ -1,0 +1,199 @@
+---
+title: "Background on the data used"
+---
+
+## FAO capture statistics in area 31
+
+Location: <https://heima.hafro.is/~einarhj/data/fao-capture-statistics.csv>
+
+The FAO dataset contains capture catch statistics from FAO area 31 by species and country for the years 1950 to 2021 (66673 records). The data set contains the following variables:
+
+-   **area**: FAO area code (only area 31)
+-   **year**: year
+-   **country**: country name in english
+-   **species**: "species" name in english
+-   **catch**: catch volume (kg if measure is 'Q_ltw')
+-   **measure**: unit of measure, mostly 'Q_ltw'
+-   **sid**: 3 letter species code
+-   **latin**: latin name of "species"
+-   **country_iso_3**: 3 letter country code
+
+You can import this data directly into R by:
+
+```{r message = FALSE}
+library(tidyverse)
+fao <- read_csv("https://heima.hafro.is/~einarhj/data/fao-capture-statistics.csv")
+```
+
+## Minke dataset {#minke-dataset}
+
+Location: <https://heima.hafro.is/~einarhj/data/minke.csv>
+
+The minke whale dataset contains biological measurements from 192 scientific catches of minke whales between the year 2003 and 2007. The data set contains the following variables:
+
+-   **whale.id**: Unique identifier for the whale
+-   **date.caught**: the date when the whales was caught
+-   **lat**: latitude
+-   **lon**: longitude
+-   **area**: Derived from location (North/South)
+-   **length**: length of the whale (cm)
+-   **weight**: weight of the whale (kg)
+-   **age**: age of the whale (years)
+-   **sex**: Male or Female
+-   **maturity**: maturity status of the whale
+-   **stomach.volume**: volume of the stomach content (liters)
+-   **stomach.weight**: weight of the stomach content (kg)
+-   **year**: the year when the whale was caught
+
+You can import this data directly into R by:
+
+```{r message = FALSE}
+library(tidyverse)
+minke <- read_csv("https://heima.hafro.is/~einarhj/data/minke.csv")
+```
+
+## Icelandic groundfish trawl-survey dataset
+
+The Icelandic groundfish trawl-survey has been conducted since 1985 and contains ~550+ annual stations. In the survey all species are identified and counted. In recent decades a subsample of each species at each survey station in length-measured. In addition, detailed measurments such as total weight, gutted, live and gonad weights as well as otolith extractions (to determine age) are done on a subset of target species. The data provided here contains only the summary of the abundance and weight of 6 species.
+
+Location: 
+
+* Station table: <https://heima.hafro.is/~einarhj/data/is_smb_stations.csv>
+* Biological table: <https://heima.hafro.is/~einarhj/data/is_smb_biological.csv>
+
+
+The station table contains a lot of variables (28), here we will only comment on some of them:
+
+* **id**: Unique identifier for each station
+* **date**: Date that the station was taken
+* **vid**: Vessel identification number
+* **t1**, **t2**: Time at start and end of of hauling
+* **lon1**, **lat1**, **lon2**, **lat2**: Position at start and end of haul.
+* **z1**, **z2**: Depth at start and end of hauling
+* **temp_s**: Mean surface temperature during hauling
+* **temp_b**: Mean bottom  temperature during hauling
+
+The biological table contains the following variables:
+
+* **id**: Station id
+* **species**: Species name
+* **kg**: Total weight in kilograms
+* **n**: Total number of fish
+
+You can import these data directly into R by:
+
+```{r message = FALSE}
+library(tidyverse)
+station <- 
+  read_csv("https://heima.hafro.is/~einarhj/data/is_smb_stations.csv")
+biological <- 
+  read_csv("https://heima.hafro.is/~einarhj/data/is_smb_biological.csv")
+```
+
+## Flying fish
+
+This is a dataset of summarised catch and effort by year, month, country of a subsample of the fishing fleet targeting flying fish.
+
+* **Year**: Year, ranging from 1998 to 2008
+* **Month**: As numeric value
+* **Country**: Country name
+* **Vessel**: Vessel type
+* **`Weight (kg)`**: The monthly weight of the catch in kilograms
+* **Trips**: The number of trips in the sample
+
+You can import these data directly into R by:
+
+```{r}
+d <- 
+  read_csv("https://heima.hafro.is/~einarhj/older/crfmr/data-raw/flyingfish.csv")
+```
+
+**NOTE**: This is a subsample of the fleet and the proportion of the effort of catch and effort may have varied through time by fleet and country.
+
+
+## Appendix
+
+### The code to get the FAO data
+
+```{r, eval = FALSE}
+library(tidyverse)
+# This may not be the path to the latest FAO capture data. Check the website
+#   and ammend path accordingly
+pth <- "https://www.fao.org/fishery/static/Data/Capture_2023.1.1.zip"
+fil <- basename(pth)
+download.file(pth, destfile = paste0("data-raw/", fil))
+unzip(paste0("data-raw/", fil), exdir = "data-raw")
+cntr <-
+  read_csv("data-raw/CL_FI_COUNTRY_GROUPS.csv") |>
+  janitor::clean_names() |>
+  select(cid = un_code, country_iso3 = iso3_code, country = name_en)
+species <-
+  read_csv("data-raw/CL_FI_SPECIES_GROUPS.csv") |>
+  janitor::clean_names() |>
+  select(sid = x3a_code, species = name_en, latin = scientific_name)
+cntr_plus <-
+  read_csv("data-raw/CL_FI_COUNTRY_GROUPS.csv") |>
+  janitor::clean_names() |>
+  select(cid = un_code, country_iso3 = iso3_code, country = name_en) |> 
+  filter(country %in% c("Sri Lanka", "Sierra Leone", "Tanzania, United Rep. of",
+                        "Papua New Guinea")) |> 
+  pull(cid)
+
+d <-
+  read_csv("data-raw/Capture_Quantity.csv") |>
+  janitor::clean_names() |>
+  filter(area_code == "31" |
+           country_un_code %in% cntr_plus) |>
+  select(cid = country_un_code,
+         sid = species_alpha_3_code,
+         area = area_code,
+         year = period,
+         catch = value,
+         measure) |>
+  left_join(cntr) |>
+  left_join(species) |> 
+  select(area, year, country, species, catch, measure, sid, latin, country_iso3)
+d |> write_csv("/net/hafri.hafro.is/export/home/hafri/einarhj/public_html/data/fao-capture-statistics.csv")
+system("chmod -R a+rX /net/hafri.hafro.is/export/home/hafri/einarhj/public_html/data/")
+```
+
+```{r eval = FALSE}
+geo::island |> 
+  write_csv("/net/www/export/home/hafri/einarhj/public_html/data/island.csv")
+system("chmod -R a+rX /net/www/export/home/hafri/einarhj/public_html/data/")
+```
+
+```{r, echo = FALSE, eval = FALSE}
+library(tidyverse)
+library(omar)
+con <- connect_mar()
+lb <- 
+  lb_mobile(con) |>
+  filter(between(year, 2000, 2020),
+         between(lon, -30, -10),
+         between(lat,  63,  69),
+         gid == 6,
+         !is.na(towtime),
+         !is.na(date),
+         !is.na(on.bottom))
+catch <- 
+  lb |> 
+  select(visir) |> 
+  left_join(lb_catch(con) |> 
+              group_by(visir) |> 
+              summarise(cod = sum(catch[sid == 1], na.rm = TRUE),
+                        catch = sum(catch, na.rm = TRUE),
+                        .groups = "drop")) |> 
+  collect(n = Inf)
+lb <- 
+  lb |> 
+  collect(n = Inf)
+lb <- 
+  lb |> 
+  left_join(catch)
+lb |> 
+  arrange(t1) |> 
+  write_csv("/u3/haf/einarhj/cod_logbooks.csv")
+```
+
+

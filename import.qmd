@@ -234,7 +234,7 @@ d
 ::: callout-tip
 # Exercise:
 
-* Read the help file on `remove_empty`` and apply it to the above dataframe such that row 3, which has no data if dropped.
+* Read the help file on `remove_empty`` and apply it to the above dataframe such that row 3, which has no data is dropped.
 * Check the difference with what you get when using `drop_na` in the pipeflow instead.
 
 :::

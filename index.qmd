@@ -27,28 +27,28 @@ This is space in the making meaning that the dates and the content is preliminar
 ### 2024-09-23 09:00 - 12:00  (Monday)
 
 - [Introduction](intro.qmd)
-- [Getting started with ggplot](visualization1.qmd)
 
 ### 2024-09-24 09:00 - 12:00  (Tuesday)
 
-- [Data import](import.qmd)
-- [A little base R](baser.qmd)
-- [Data transformation 1](transformation1.qmd)
+- [Getting started with ggplot](visualization1.qmd)
+
 
 ### 2024-09-25 09:00 - 12:00  (Wednesday)
+
+- [Data import](import.qmd)
+- [Data transformation 1](transformation1.qmd)
+
+### 2024-09-26 09:00 - 12:00  (Thursday)
 
 - [Data transformation 2](transformation2.qmd)
 - [Quering MFRI databases](mar.qmd)
 
-### 2024-09-26 09:00 - 12:00  (Thursday)
-
-- [Tidy datasets](tidy.qmd)
-- [Map plotting](maps.qmd)
 
 ### 2024-10-01 09:00 - 12:00  (Tuesday)
 
+- [Tidy datasets](tidy.qmd)
+- [Map plotting](maps.qmd)
 - [Reproducable documents](quarto.qmd)
-- [Working with dates and time]()
 
 ### 2024-10-02 09:00 - 12:00  (Wednesday)
 

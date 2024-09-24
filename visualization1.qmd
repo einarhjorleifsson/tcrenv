@@ -243,6 +243,32 @@ ggplot(w,
   geom_violin()
 ```
 
+::: callout-tip
+## Exercise: Overlay of 2 plots
+
+Try to construct an overlay of a box- and a violinplot, aka:
+
+```{r, echo = FALSE}
+ggplot(w,
+       aes(x = sex, y = length)) +
+  geom_violin() +
+  geom_boxplot()
+```
+
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution:
+
+```{r, eval = FALSE}
+ggplot(w,
+       aes(x = sex, y = length)) +
+  geom_violin() +
+  geom_boxplot()
+```
+
+:::
+
 The violin plot is actually a "density" histogram. The information in the above graph could also be presented as:
 
 ```{r, fig.height = 4}

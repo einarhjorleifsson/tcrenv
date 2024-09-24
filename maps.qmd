@@ -1,0 +1,232 @@
+---
+title: "Maps in R"
+warning: FALSE
+message: FALSE
+---
+
+
+```{r, eval = FALSE}
+install.packages("sf")
+install.packages("terra")
+install.packages("tidyterra")
+install.packages("ggspatial")
+install.packages("ggrepel")
+install.packages("patchwork")
+install.packages("maps")
+install.packages("mapdata")
+install.packages("marmap")
+install.packages("mregions")
+
+```
+
+```{r}
+library(sf)          # dealing with spatial tables
+library(terra)       # handeling raster data
+library(tidyterra)   # handeling terra
+library(tidyverse)
+library(ggspatial)   # some useful ggplot2 additions
+library(ggrepel)     # handeling text on plots
+library(patchwork)   # for assembling multiple ggplots
+library(maps)        # some basic country maps
+library(mapdata)     # higher resolution maps
+library(marmap)      # access global topgraphy data
+library(mregions)    # access to various marine regions, including EEZ
+```
+
+
+
+## Reference map
+
+Maps as background for ggplot-plot can come from myriad of sources. Here we take an example of shoreline that reside in the {map} and {mapdata}-packages as well as from GADM. The latter provides generally a higher resolutions of countries shoreline than the two former data-sources.
+
+### {mapdata}
+
+
+To get the data into required ggplot2 form (a dataframe) we use the `map_data`-function:
+
+```{r}
+my_region <- "Saint Lucia"
+lca <- map_data("worldHires", region = my_region)
+lca |> glimpse()
+```
+
+Here we have just a simple dataframe with `r nrow(lca)` coordinates (long and lat) and some other variables. We can try map these coordinates to different layers:
+
+```{r}
+m <- 
+  ggplot(lca, aes(long, lat, group = group)) +
+  labs(x = NULL, y = NULL)
+m1 <- m + geom_point(size = 0.5) + labs(title = "geom_point")
+m2 <- m + geom_line() + labs(title = "geom_line")
+m3 <- m + geom_path() + labs(title = "geom_path")
+m4 <- m + geom_polygon() + labs(title = "geom_polygon")
+m1 + m2 + m3 + m4  # patchwork package handles this nicely
+```
+
+There is nothing magic about background "map" data. In principle it is just **ordered** x- and y-points, of which `geom_path` and `geom_polygon` handle nicely. The group argument above is useful e.g. if a country has more than one entity (like islands). An example is Guadeloupe:
+
+```{r}
+glp <- 
+  map_data("worldHires", region = "Guadeloupe") |> 
+  ggplot(aes(long, lat, group = group)) +
+  geom_path()
+glp
+```
+
+There one additional thing that is needed when plotting maps and that is the aspect ration, i.e. the ratio of the dimensions between x (longitude) and y (latitude). For ordinary dataframes, {ggplot2} provides two functions for that: `coord_quickmap` and `coord_map`, nomally the former is sufficient:
+
+```{r}
+glp + coord_quickmap()
+```
+
+Those that are familiar with both St. Lucia and Guadeloupe know that the outlines of the countries as plotted above are very course. And in the case of Guadeloupe some of the smaller islands are actually missing. In general the map resolution needed depends on the purpose of the plot and scale of the plot. The resolution of the shoreline above would suffice if we were to plot a map on a regional scale. However the details may not be sufficient if one were to create a map on a country scale.
+
+### GADM
+
+A little better resolution than provide by the {map}- and {mapdata}-package is that provided by [GADM](https://gadm.org) - a list of the available countries can be obtained [here](https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg). To a map of a country one needs to specify the 3-letter country code. We can read a map of Guadelupe directly into R:
+
+```{r}
+# Generate a handy function, in case we want any country map
+read_gadm <- function(country_code = "LCA") { 
+  pth <- paste0("https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/gadm41_",
+                country_code,
+                ".gpkg")
+  suppressWarnings(read_sf(pth))
+}
+
+glp <- read_gadm(country_code = "GLP")
+class(glp)
+```
+
+The class of the object ("sf") returned may be novice for the beginner. Let's take a peek:
+
+```{r}
+glp
+```
+
+We actually have a dataframe with a variable named "geom" that is of class MULTIPOLYGON. In the header we get then some additional spatial information. What we have is simply dataframe with some very special spatial constructs within it. If you want to delve into the spatial realm of the R we suggest the following two books:
+
+* [Spatial Data Science With Applications in R](https://r-spatial.org/book)
+* [Geocomputation with R](https://r.geocompx.org/index.html)
+
+Take note that the in the above dataframe we do not have any variables that correspond to longitute and latitude, since they are actually stored within the geom(etry)-variable. To plot such spatial objects we simply call the `geom_sf`-function:
+
+```{r}
+ggplot() +
+  geom_sf(data = glp)
+```
+
+Note that here we do not need to call `coord_quickmap` because the projection is taken care of when we call `geom_sf`.
+
+We can easily add layers to a map, like landings locations and names in St. Lucia:
+
+```{r}
+# get a gadm-map of St. Lucia
+lca <- read_gadm(country_code = "LCA")
+# landings sites
+sites <- 
+  tribble(~site          ,        ~lon,     ~lat,   ~type   ,
+          "Anse-La-Raye"   , -61.04358, 13.94095, "Primary"   ,
+          "Bannanes"       , -61.00056, 14.01117, "Secondary" ,
+          "Canaries"       , -61.06785, 13.90629, "Secondary" ,
+          "Castries"       , -60.99230, 14.01618, "Primary"   ,
+          "Choiseul"       , -61.05047, 13.77464, "Primary"   ,
+          "Dennery"        , -60.88690, 13.91171, "Primary"   ,
+          "Gros-Islet"     , -60.95271, 14.07893, "Primary"   ,
+          "Laborie"        , -60.99555, 13.75008, "Primary"   ,
+          "Marigot"        , -61.02503, 13.96628, "Secondary" ,
+          "Micoud"         , -60.89523, 13.81980, "Primary"   ,
+          "Praslin"        , -60.89823, 13.87391, "Secondary" ,
+          "Riviere-doree"  , -61.03742, 13.75919, "Secondary" ,
+          "Savannes-Bay"   , -60.93207, 13.76298, "Primary"   ,
+          "Soufriere"      , -61.06069, 13.85646, "Primary"   ,
+          "Vieux-Fort"     , -60.95540, 13.72517, "Primary")
+
+ggplot() +
+  geom_sf(data = lca) +
+  geom_point(data = sites,
+             aes(lon, lat, colour = type)) +
+  scale_colour_brewer(palette = "Set1") +
+  geom_text_repel(data = sites,
+            aes(lon, lat, label = site, colour = type)) +
+  theme(legend.position = "none") +
+  labs(x = NULL, y = NULL)
+```
+
+Above we use `geom_text_repel` (from the {ggrepel}-package) for the landing site names, a function that tries to automatically nudge the name location such that "overplotting" is minimised.
+
+## EZZ
+
+We can obtain country's EEZ using the `mr_shp`-function from the {mregion}-package.
+
+```{r}
+eez <- mr_shp(key = "MarineRegions:eez")
+```
+
+One can then filter the needed EEZ by using e.g. any of the following variables:
+
+```{r}
+eez |> 
+  st_drop_geometry() |> 
+  select(geoname, territory1, iso_ter1) |> 
+  arrange(geoname) |> 
+  knitr::kable()
+```
+
+An example for generating a map of St. Lucia and its EEZ is as follows:
+
+```{r}
+#| fig-height: 3
+ggplot() +
+  geom_sf(data = eez |> filter(iso_ter1 == "LCA")) +
+  geom_sf(data = lca)
+```
+
+## Bathymetry
+
+One can obtain bathymetry data from https://download.gebco.net. In the following example we read a geotiff file obtained (by mouseclicks etc.) from the gebco site:
+
+```{r}
+download.file("https://heima.hafro.is/~einarhj/crfmr/aux/gebco_2022_n15.7874_s11.5906_w-64.8193_e-58.2495.tif",
+              destfile = "carb.tif")
+z <- rast("carb.tif")
+
+names(z) <- "depth"
+# limit the area to that of St. Lucia
+bb <- st_bbox(c(xmin = -61.25, xmax = -60.6,
+                ymin = 13.4, ymax = 14.3))
+z <- crop(z, bb)
+# values above sealevel set to NA
+i <- values(z) > 0
+values(z)[i] <- NA
+# all values deeper than 1500 m set to 1500 m
+i <- values(z) < -1500
+values(z)[i] <- -1500
+
+# hillshade with grey colors
+slope <- terrain(z, "slope", unit = "radians")
+aspect <- terrain(z, "aspect", unit = "radians")
+hill <- shade(slope, aspect, 10, 340)
+
+p <- 
+  ggplot() +
+  theme_void() +
+  geom_spatraster(data = hill, show.legend = FALSE) +
+  # Note the scale, grey colours
+  scale_fill_gradientn(colours = grey(0:100 / 100), na.value = NA) +
+  ggnewscale::new_scale_fill() +
+  geom_spatraster(data = z, alpha = 0.55, show.legend = FALSE) +
+  geom_spatraster_contour(data = z, colour = "red", linewidth = 0.4,
+                          breaks = c(-25, -50, -100, -200, -500, -750, -1000)) +
+  scale_fill_viridis_c() +
+  #geom_sf(data = eez1, colour = "white") +
+  theme(legend.position = "none") +
+  annotation_scale(pad_x = unit(1, "cm"),
+                   pad_y = unit(1, "cm"))
+p
+```
+
+## gisland-package
+
+The gisland package has some native Icelandic spatial stuff worth looking at. Let's move to the [gisland package pages](https://heima.hafro.is/~einarhj/pkg/gisland).
+
