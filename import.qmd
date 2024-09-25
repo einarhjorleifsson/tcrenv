@@ -98,7 +98,7 @@ w |>
 
 ### On file paths
 
-The first argument in `read_xxx` functions is the file name, including the path. If the file is in the current working directory (use `getwd()` to get information of you current working directory) one can simply write the following command:
+The first argument in `read_xxx` functions is the file name, including the path. If the file is in the current working directory (use `getwd()` to get the location of you current working directory [or press the "blue R" button in the Files-tab]) one can simply write the following command:
 
 ```{r, eval = FALSE}
 w <- read_csv("minke.csv")
@@ -126,7 +126,7 @@ read_csv("../../***.csv")          # Two folders up
 read_csv("../../data-raw/***.csv") # Two folders up, one folder down
 ```
 
-Again, if sharing a project this may not be reproducable.
+Again, if sharing a project this may not be reproducible.
 
 ### Sanity checks
 
@@ -139,10 +139,10 @@ dim(d)      # shows the num row and col of d
 names(d)    # gives the column names of d
 summary(d)  # quick summary statistics for the columns of d
 str(d)      # show the structure of the data, e.g. variable types
-glimpse(d)  # dplyr equivalent of str but turns sometimes more informative outputs
+glimpse(d)  # dplyr equivalent of str for dataframe
 ```
 
-Take particular note that the class of each variable is as you expect. E.g. in the minke case one expects that the class for length is numeric (dbl) and class for date is a date-class (dttm), not e.g. character.
+Take particular note that the class (type) of each variable is as you expect. E.g. in the minke case one expects that the class for length is numeric (dbl) and class for date is a date-class (dttm), not e.g. character.
 
 ### Arguments
 
@@ -154,7 +154,7 @@ tmp <-
   metatdata 2: this research was funded by EU
   ID,Date,Fishing area
   1,2021-01-01,North
-  2,2021-01-02,North
+  N/A,2021-01-02,North
   NA,NA,NA
   3,2021-02-28,South
   4,2021-02-29,N/A
@@ -162,38 +162,46 @@ tmp <-
 writeLines(tmp, "data-raw/tmp.csv")
 ```
 
-As is very common with datafiles this file has:
+This short datafile is on purpose quite messy. We have:
 
 * Metadata: Here the first two lines
-* Missing categorical data represented as "N/A"
-* Missing date information represented as -9999
+* Variable names: Here in the third line
+* Missing data represented as "NA", "N/A" or -9999
 
 
-Reading the tmp "csv"-file with just the default arguements gives us this:
+Reading the tmp "csv"-file with just the default arguments gives us this:
 
 ```{r, warning = TRUE}
 read_csv("data-raw/tmp.csv")
 ```
 
-This dataset actually contains only one variable, the reason being that the first line in the data is interpreted as the variable names and since we have no comma there the read_csv function "thinks" that the data is only one variable. In order to get the data properly into R we need to overwrite some of the defaults:
+Look carefully at the output message. This dataset actually contains only one variable (`metadata 1: this data was collected on R/V Bjarni`), the reason being that the first line in the data is interpreted as the variable names and since we have no comma there the read_csv function "thinks" that the data is only one variable.
+
+Part of the message says: "call `problems()` on your data frame for details". Lets read in again and run also the suggested `problems()`.
+
+```{r, warning = TRUE}
+read_csv("data-raw/tmp.csv")
+problems()
+```
+
+This says that we expected the data to be only 1 column but got 3 columns because it detected two "," in each of the listed rows. In order to get the data properly into R we need to overwrite some of the defaults, first let's skip the 2 metadata lines:
 
 ```{r}
 read_csv("data-raw/tmp.csv",
-         skip = 2,                 # skip the first two lines (the metadata)
-         na = c("N/A", "-9999"))   # Representation of missing values
+         skip = 2)                # skip the first two lines (the metadata)
 ```
 
 Now in the above code we manage to get things roughly right. But take note that:
 
-* ID and date is a character, but we kind of expected a numerical and a date respectively
-* We kind of expected that obervations in line 3 would be interpreted as missing
+* ID and date is a character, but we kind of expected a numerical (actually an integer) and a date respectively
+* The third record returns "NA" coloured in red because in R, NA is represented as missing data by default.
 
 
 ::: callout-tip
 # Exercise:
 
-* Try to fix the na-argument in order to account for "NA"
-* Check the help for `read_csv` and see if you add an arguement to skip the empty row (row 3)
+* Check the help file for `read_csv`
+* Try to fix the **na** argument in order to account for "N/A" and "-9999" in the data as missing
 
 :::
 
@@ -202,13 +210,17 @@ Now in the above code we manage to get things roughly right. But take note that:
 ## Solution:
 
 ```{r, eval = FALSE}
-read_csv(tmp,
+read_csv("data-raw/tmp.csv",
          skip = 2,                      # skip the first two lines
-         skip_empty_rows = TRUE,
-         na = c("NA", "N/A", "-9999"))  # Representation of missing values
+         na = c("NA", "N/A", "-9999"))  # Representation of missing value
 ```
 
-But what happened to the date in ID 4??
+But what happened to the date in ID 4?? Try this (right after running the read_csv) to get a hint:
+
+```{r, eval = FALSE}
+problems()
+```
+
 :::
 
 ### Variable names
@@ -225,8 +237,9 @@ The variables names in imported files are often lengthy, contain combination of 
 d <- read_csv("data-raw/tmp.csv",
          skip = 2,
          na = c("NA", "N/A", "-9999")) |> 
-  clean_names() |> 
-  rename(area = fishing_area)
+  clean_names() |>                # get here only lower case letters 
+                                  # replace " " with "_"
+  rename(area = fishing_area)     # shorten name
 d
 ```
 
@@ -235,7 +248,6 @@ d
 # Exercise:
 
 * Read the help file on `remove_empty`` and apply it to the above dataframe such that row 3, which has no data is dropped.
-* Check the difference with what you get when using `drop_na` in the pipeflow instead.
 
 :::
 
@@ -245,8 +257,6 @@ d
 ```{r, eval = FALSE}
 d |> 
   remove_empty(which = "rows")
-d |> 
-  drop_na()
 ```
 
 :::

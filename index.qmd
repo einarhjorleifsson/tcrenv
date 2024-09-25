@@ -35,12 +35,12 @@ This is space in the making meaning that the dates and the content is preliminar
 
 ### 2024-09-25 09:00 - 12:00  (Wednesday)
 
-- [Data import](import.qmd)
 - [Data transformation 1](transformation1.qmd)
+- [Data transformation 2](transformation2.qmd)
 
 ### 2024-09-26 09:00 - 12:00  (Thursday)
 
-- [Data transformation 2](transformation2.qmd)
+- [Data import](import.qmd)
 - [Quering MFRI databases](mar.qmd)
 
 

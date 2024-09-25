@@ -400,7 +400,7 @@ ggplot(w, aes(lon, lat, colour = sex)) +
 ## Solution (with some twist)
 
 ```{r, eval = FALSE}
-ggplot(w, ) +
+ggplot(w) +
   geom_point(aes(lon, lat, colour = sex)) +
   geom_polygon(data = read_csv("https://heima.hafro.is/~einarhj/data/island.csv"),
                aes(lon, lat),

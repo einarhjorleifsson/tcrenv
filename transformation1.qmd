@@ -111,7 +111,7 @@ Some even go the whole way in code-writing from "left-to-right", like:
 
 Note that Rstudio has a built in shortcut for the `|>` operator: \[ctrl\] + \[shift\] + M.
 
-## Operation on observations (rows)
+Also not that for all practical purposes the "|>" and the "%>%" mean exactly the same. The latter actually was introduced first in R (via the {margrittr}-package) but the former is now part of base R. You can change the RStudio default setting ("%>%") by goint Tools -> Global options -> Code -> Editing and click on "Use native pipe operator".
 
 ### **filter**: Extract observations
 
