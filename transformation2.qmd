@@ -96,6 +96,8 @@ w |>
 The function for standard error is not availble in R. A remedy is that you use college statistical knowledge to derive them from the appropriate variables you derived above.
 :::
 
+[This](https://cran.r-project.org/doc/contrib/Short-refcard.pdf) may help to find different basic statistics function.
+
 ::: {.callout-tip collapse="true"}
 ## Solution
 ```{r, eval = FALSE}
@@ -193,7 +195,8 @@ d <-
   station %>% 
   select(id, date, lon1, lat1) |> 
   left_join(biological |> 
-              filter(species == "monkfish"))
+              filter(species == "monkfish"),
+            by = join_by(id))
 d
 ```
 
@@ -208,7 +211,7 @@ d <-
 d
 ```
 
-So only now would we able to do some summary statistics like the mean catch and standard deviations. Lets just use the inbuilt ggplot function to do that and get a plot at the same time:
+So only now would we able to do some summary statistics like the mean catch and standard error. Lets just use the inbuilt ggplot function to do that and get a plot at the same time:
 
 ```{r}
 d |> 
@@ -228,6 +231,37 @@ d |>
 ```
 
 Ergo: When working with data in general it is always important to think about if missingness constitutes a zero or a true NA.
+
+But we may want some tabular data, so we could do this rather than directly a plot:
+
+```{r}
+d_sum <-
+  d |> 
+  mutate(year = year(date)) |> 
+  group_by(year) |> 
+  summarise(n = n(),
+            min_kg = min(kg),
+            max_kg = max(kg),
+            mean_kg = mean(kg),
+            sd_kg = sd(kg),
+            se_kg = sd_kg / sqrt(n),
+            error = se_kg * 1.96,
+            sum_kg = sum(kg))
+d_sum
+```
+
+And then the plot would be:
+
+```{r}
+d_sum |> 
+  mutate(se_lower = mean_kg - error, 
+         se_upper = mean_kg + error) |> 
+  ggplot() +
+  geom_pointrange(aes(year, mean_kg, ymin = se_lower, ymax = se_upper),
+                  size = 0.5)
+```
+
+
 
 ## **right_join**: Matching values from x to y
 
@@ -278,7 +312,8 @@ x <- tibble(A = c("a", "b", "c"),
 y <- tibble(A = c("a", "b", "d"),
             B = c("t", "u", "w"),
             D = c(3, 2, 1))
-
+x
+y
 left_join(x, y)
 right_join(x, y)
 left_join(y, x)
@@ -329,6 +364,8 @@ x <- tibble(A = c("a", "b", "c"),
 y <- tibble(A = c("c", "d"),
             B = c("v", "w"),
             C = c(3, 4))
+x
+y
 bind_rows(x, y)
 union(x, y)
 intersect(x, y)

@@ -40,22 +40,26 @@ This is space in the making meaning that the dates and the content is preliminar
 
 ### 2024-09-26 09:00 - 12:00  (Thursday)
 
+- More on [Data transformation 2](transformation2.qmd)
 - [Data import](import.qmd)
-- [Quering MFRI databases](mar.qmd)
-
 
 ### 2024-10-01 09:00 - 12:00  (Tuesday)
 
-- [Tidy datasets](tidy.qmd)
-- [Map plotting](maps.qmd)
-- [Reproducable documents](quarto.qmd)
+- More on [Data import](import.qmd)
+- [More ggplot - maps](visualization2.qmd)
+
 
 ### 2024-10-02 09:00 - 12:00  (Wednesday)
 
-- [Introduction to spatial data](spatial)
-- [Pending]()
+- [Accessing MFRI database](mar.qmd)
+- [Reproducible research with R](reproducable.qmd)
 
-### 2024-10-03 09:00 - 12:00 (Thursday)
+### 2024-10-03 10:30 - 14:00 (Thursday)
 
-- [Pending]()
-- [Pending]()
+- More on [Reproducible research with R](reproducable.qmd)
+
+
+### For a rainy day ....
+
+- [Tidy datasets](tidy.qmd)
+

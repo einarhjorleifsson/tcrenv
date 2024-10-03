@@ -1,15 +1,320 @@
 ---
 title: "Quering MFRI databases"
+echo: TRUE
+message: FALSE
+warning: FALSE
 ---
 
 ## Preamble
 
-There are a lot of different ...
+To access the MFRI database you need:
+
+* The {ROracle} package (which needs the {DBI} package)
+* The {mar} package
+
+Testing if you have {ROracle} and {mar} installed:
 
 ```{r}
-con <- ROracle::dbConnect(DBI::dbDriver("Oracle"), dbname = "sjor")
-dplyr::tbl(con, dbplyr::in_schema("CHANNEL", "STOD_V")) |> dplyr::glimpse()
+system.file(package = "ROracle")
+system.file(package = "mar")
 ```
 
+Ideally these should be installed by the IT-department when they set up your computer, including R and RStudio.
+
+#### Installing {ROracle}
+
+If you **do not have ROracle** do:
+
+```{r, eval = FALSE}
+pth <- "https://r.hafro.is/bin/windows/contrib/4.2/ROracle_1.3-1.1.zip"
+download.file(pth, destfile = "ROracle_1.3-1.1.zip")
+install.packages("ROracle_1.3-1.1.zip", repos = NULL, type = "win.binary")
+file.remove("ROracle_1.3-1.1.zip")
+```
+
+#### Installing {mar}
+
+If you **do not have mar** do:
+
+```{r, eval = FALSE}
+remotes::install_git(
+  "https://gitlab.hafogvatn.is/dev/mar.git", 
+  dependencies = FALSE)
+```
+
+## Connecting to the database
+
+
+```{r}
+library(tidyverse)
+library(mar)
+con <- connect_mar()
+con
+```
+
+## What is in the database?
+
+The `mar_tables`-function gives us some informations about what is in the database:
+
+```{r}
+info <- mar_tables(con)
+info |> glimpse()
+```
+
+Here we have among other things:
+
+* **owner**: This is sometimes referred to as "schema". Basically a schema contains a number of tables that may or may not be related. Let's count the number of table.
+* **table_name**: An actual table.
+* **comments**: Hopefully some useful description of what is in the table.
+
+### What schemas do we have?
+
+Let's see the schemas we have and how many tables in each schema:
+
+```{r}
+info |> 
+  count(owner, name = "n.tables") |> 
+  arrange(owner) |> 
+  collect() |> 
+  knitr::kable(caption = "List of owners and the number of tables")
+```
+
+### What tables do we have?
+
+Let's check what tables are in **phyto**:
+
+```{r}
+info |> 
+  filter(owner == "phyto") |> 
+  select(table_name, comments) |> 
+  arrange(table_name) |> 
+  collect()
+```
+
+### What views do we have?
+
+Because the construct of tables within a database can be quite complex, a view is often created that may combine different tables. The intent is to make it easier for the downstream user to operate on the data. Let's check what views are in **veidibok**:
+
+```{r}
+mar_views(con) |> 
+  filter(owner == "veidibok") |> 
+  arrange(view_name) |> 
+  collect() |> 
+  knitr::kable()
+```
+
+### What variables are in a table?
+
+Here we use the `mar_fields`-function. Lets pick the table "phyto.hafur"
+
+```{r}
+mar_fields(con, "phyto.talning")
+```
+
+#### What is in a table?
+
+Here we use the function `tbl_mar`:
+
+```{r}
+tbl_mar(con, "fiskmerki.rafgogn")
+```
+
+
+::: callout-tip
+## Exercise: Take a look at a table of your own choice
+
+* Use the `mar_tables`-, `mar_views`-, `mar_fields`, `tbl_mar`-functions to explore something of your interest
+* If you do not have read access to certain schemas/tables but you think you should, send an email to Rafn Sigurðsson at hafogvatn.is
+
+:::
+
+## Under the hood
+
+The basic function when we access a database table is `tbl`. Let's use to explain what is happening under the hood, here taking a peek at a simple "lookup-table":
+
+```{r}
+q <- tbl(con, dbplyr::in_schema("VESSEL", "USAGE_CATEGORY"))
+q |> glimpse()
+```
+
+Take note here that:
+
+* We do not get the number of rows
+* That it is stated "Database: OraConnection"
+* Look into your "Environment" as see that q i actually "List of 2", not the usual "x obs. of y variables"
+
+So we have kind of a table but not quite the tables we have so far worked with in R. Check out this e.g.:
+
+```{r}
+q |> class()
+q |> show_query()
+```
+
+Effectively what we have is an SQL-query. Let's add a filter:
+
+```{r}
+q2 <- 
+  q |> 
+  filter(CATEGORY == "FishingShip") |> 
+  select(name = NAME, english = ENG_NAME, cat = CATEGORY)
+q2 |> glimpse()
+q2 |> show_query()
+```
+
+So now we have more SQL-code. The big news here is:
+
+* We can use the R-functions we already have learned
+* Because we are communicating with a database the R-code is converted into SQL-code automatically
+* Now Oracle only "understands" SQL. But we do not need to learn that language because the [dbplyr-package](https://dbplyr.tidyverse.org/) does that for us. **Consider yourself blessed**.
+
+**Note though that not every code in R is translated to SQL**
+
+Normally we would **not** access a table by the `tbl`-function, user rather the `tbl_mar`-function, e.g.:
+
+```{r}
+q <- tbl_mar(con, "vessel.usage_category")
+q |> glimpse()
+```
+
+Sometimes there is a shortcut available, like:
+
+```{r}
+q <- taggart(con)
+q |> glimpse()
+q |> show_query()
+```
+
+In both cases take note that the variable names now are all in small-caps (they are originally all-caps in Oracle).
+
+## Some "random" data view
+
+### Number of fish sampling stations
+
+```{r}
+les_stod(con) |> 
+  filter(between(ar, 1800, 2100)) |> 
+  count(ar) |> 
+  collect() |> 
+  ggplot(aes(ar, n)) +
+  geom_col() +
+  labs(title = "Number of fish sampling stations")
+```
+
+### Electronic fish tag
+
+```{r}
+q <- 
+  tbl_mar(con, "fiskmerki.rafgogn") |> 
+  filter(taudkenni == "1C0407")
+q |> glimpse()
+q |> 
+  collect() |> 
+  ggplot(aes(dagstimi, -dypi)) +
+  geom_point(size = 0.1) +
+  labs(title = "Depth profile from one electronically tagged fish")
+```
+
+### Hydro sonda
+
+```{r}
+q <- 
+  tbl_mar(con, "hydro.v_sonda") |> 
+  filter(between(latitude, 66, 67),
+         between(longitude, -19, -18))
+q |> glimpse() 
+q |> 
+  collect() |>  
+  ggplot(aes(temperature, -pressure)) +
+  theme_bw() +
+  geom_point(size = 0.1, alpha = 0.05) +
+  labs(title = "Temperature profiles")
+q |> 
+  filter(between(pressure, 150, 200)) |> 
+  mutate(year = str_sub(datetime, 7, 10),
+         year = as.integer(year)) |> 
+  ggplot(aes(year, temperature)) +
+  stat_summary(fun.data = "mean_cl_boot") +
+  labs(title = "Temperature change at pressure 150-200")
+```
+
+### Veiðibók
+
+```{r, fig.height = 20}
+tbl_mar(con, "veidibok.veidibok_v") |>
+  filter(vatnsfall %in% 
+           c("Laxá í Aðaldal", "Laxá á Ásum,", "Vatnsdalsá", "Ytri Rangá", 
+             "Víðidalsá og Fitjá", "Eystri Rangá", "Norðurá Borg", "Apavatn",
+             "Langá", "Hlíðarvatn", "Arnarvatn stóra", "Grímsá Borgarfirði",
+             "Miðfjarðará", "Blanda", "Laxá í Kjós", "Hofsá í Vopnafirði",
+             "Selá í Vopnafirði", "Fljótaá", "Eyjafjarðará", "Grenlækur")) |> 
+  mutate(year = year(dags)) |> 
+  count(year, vatnsfall, fisktegund) |> 
+  collect() |> 
+  ggplot(aes(year, n, fill = fisktegund)) +
+  geom_col() +
+  facet_wrap(~ vatnsfall, scales = "free_y", ncol = 2) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(title = "Fjöldi fiska??")
+```
+
+
+::: callout-tip
+## Exercise
+
+* Let's collectively pick a table and look at some of the data
+* Try out yourself, but take note that you may not have read-access to only but few of the schemas and tables
+
+:::
+
+## Very complex R code
+
+The following shows you can generate very complex query from within R. Here we connect to different tables and then join them using only R-syntax. This is actually the code behind the `taggart`-funtion used above.
+
+```{r, eval = FALSE}
+stodvar <-
+  les_stod(con) %>%
+  left_join(les_syni(con), by = 'stod_id') %>% 
+  # dplyr::mutate(tLon = kastad_lengd,
+  #        tLat =  kastad_breidd,
+  #        tAr = to_number(to_char(dags, 'yyyy'))) %>%
+  dplyr::select(synis_id,
+                leidangur,
+                stod = stod_id,
+                tDags = dags,
+                tAr = ar,
+                tReitur = reitur,
+                tSmareitur = smareitur,
+                tLon = kastad_lengd,
+                tLat = kastad_breidd,
+                tDypi = botndypi_kastad,
+                tVeidarfaeri = veidarfaeri)
+
+fiskar <-
+  fiskmerki_fiskar(con) %>%
+  dplyr::select(fiskur_id,
+                synis_id,
+                tTegund = tegund,
+                tLengd = lengd,
+                tThyngd = thyngd,
+                tKyn = kyn,
+                tKynthroski = kynthroski)
+
+merki <-
+  fiskmerki_merki(con) %>%
+  dplyr::select(tid,
+                fiskur_id,
+                audkenni,
+                numer)
+
+q <-
+  fiskar %>%
+  dplyr::left_join(merki, by = "fiskur_id") %>%
+  dplyr::left_join(stodvar, by = "synis_id") %>%
+  dplyr::left_join(fiskmerki_endurheimtur(con), by = "tid") %>%
+  dplyr::left_join(fiskmerki_rafaudkenni(con),  by = "tid") %>%
+  dplyr::select(-id, -tid)
+
+q |> show_query()
+```
 
 
