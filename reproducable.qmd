@@ -349,10 +349,28 @@ output:
 ::: callout-tip
 # Exercise
 
-In your markdown file:
+A markdown report
 
--   Add bibliography to your file
--   Put a word document in your project and use it as a template for the resulting word document
+If you have the "git"-program install:
+
+* Copy this path: https://github.com/einarhjorleifsson/minke.git
+* In RStudio do: File -> New Project ... -> Version Control -> Git
+* Paste the path into: Repository URL
+* Open the minke.qmd document
+
+Or do things via point-and-mouse-click taking the zip file from here:
+
+* https://github.com/einarhjorleifsson/minke
+* Do: Code -> Download Zip -> you know the rest
+* Open this new project
+
+We will collectively go through this markdown document to gain some insight into some common setting used when generating a report.
+
 :::
+
+## Further reading
+
+* Start with [The Communicate chapter in Hadley's r4ds](https://r4ds.hadley.nz/communicate)
+* The [quarto space](https://quarto.org) has it all, but it is quite daunting for the novice
 
 # References
