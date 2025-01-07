@@ -24,6 +24,10 @@ cl = function(x, color = "blue"){
 include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/data_science.png")
 ```
 
+## Side-step
+
+* [Workflow: basics](https://r4ds.hadley.nz/workflow-basics)
+
 ## Preamble
 
 ```{r echo=FALSE}
@@ -79,14 +83,14 @@ We need to load the library {tidyverse} into our current session and we will use
 ```{r}
 library(tidyverse)
 w <- 
-  "ftp://ftp.hafro.is/pub/data/csv/minke.csv" |> 
+  "https://heima.hafro.is/~einarhj/data/minke.csv" |> 
   read_csv()
 ```
 
 The code structure above is a little bit different than used up to now:
 
 ```{r, eval = FALSE}
-w <- read_csv("ftp://ftp.hafro.is/pub/data/csv/minke.csv")
+w <- read_csv("https://heima.hafro.is/~einarhj/data/minke.csv")
 ```
 
 and is just to gently introduce you to the `|>`-concept (often read as: "pipe"-concept) that needs a bit of extra explaining:
@@ -104,7 +108,7 @@ Recomended that you "read" the `|>` as **"then"**. Hence the above can be read a
 Some even go the whole way in code-writing from "left-to-right", like:
 
 ```{r, eval = FALSE}
-"ftp://ftp.hafro.is/pub/data/csv/minke.csv" |> 
+"https://heima.hafro.is/~einarhj/data/minke.csv" |> 
   read_csv() ->
   w
 ```
@@ -451,4 +455,7 @@ w |>
             ml = mean(length, na.rm = TRUE))
 ```
 
+## Suggested 1st reading
 
+* [r4ds: Chapter 2  Workflow: basics](https://r4ds.hadley.nz/workflow-basics)
+* [r4ds: Chapter 3  Data transformation](https://r4ds.hadley.nz/data-transform)

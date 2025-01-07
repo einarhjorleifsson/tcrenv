@@ -8,7 +8,7 @@ fig-height: 3.5
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 library(tidyverse)
 theme_set(theme_grey(base_size = 14))  # larger text base size (default is 12)
-w <- read_csv(file = "ftp://ftp.hafro.is/pub/data/csv/minke.csv")
+w <- read_csv(file = "https://heima.hafro.is/~einarhj/data/minke.csv")
 ```
 
 
@@ -16,7 +16,7 @@ w <- read_csv(file = "ftp://ftp.hafro.is/pub/data/csv/minke.csv")
 
 In this section we are going to **introduce** you to how to plot data in R. There are quite a number of plot-lingos in R, here we are going to limit ourselves to the ggplot-lingo. But first we are going to side track a bit.
 
-### RStudio projects and orientation
+### RStudio projects, again!
 
 Before we do anything else lets create an RStudio project.
 
@@ -24,7 +24,7 @@ Before we do anything else lets create an RStudio project.
 # Create an RStudio project:
 
 1. File -\> New project ... -\> New Directory --\> New Project ...
-2. Type in a directory name (e.g. "crfmr-ggplot")
+2. Type in a directory name (e.g. "first-ggplot")
 3. Decide where to store the project (read: the directory) on your computer using "Browse ..."
 4. Press "Create Project"
 
@@ -43,7 +43,7 @@ We are going to use a dataset of 190 observations on minke whales in this tutora
 
 ```{r, eval = FALSE}
 library(tidyverse)
-w <- read_csv(file = "ftp://ftp.hafro.is/pub/data/csv/minke.csv")
+w <- read_csv(file = "https://heima.hafro.is/~einarhj/data/minke.csv")
 w          # print out the data in the console
 # the view is limited to the first few variables and 
 # 10 observations
@@ -64,7 +64,7 @@ Once done, one can then read the data in from the local computer via:
 my_minke <- read_csv("minke-copy.csv")
 ```
 
-4. Save your script, e.g. as "minke-data.R"
+4. Save your script, e.g. as "minke-data.R" within your current project.
 :::
 
 We are going to deal with data import in more detail later in the course. For those wanting to get ahead, read [r4ds - Import](https://r4ds.hadley.nz/import.html).
@@ -413,6 +413,6 @@ ggplot(w) +
 
 ## Suggested 1st reading
 
-* [1  Data visualization](https://r4ds.hadley.nz/data-visualize)
-* [9  Layers](https://r4ds.hadley.nz/layers)
+* [r4ds: Chapter 1  Data visualization](https://r4ds.hadley.nz/data-visualize)
+* [r4ds: Chapter 9  Layers](https://r4ds.hadley.nz/layers)
 
