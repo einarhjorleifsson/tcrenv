@@ -1,0 +1,71 @@
+---
+title: "Import example2"
+error: true
+embed-resources: true
+---
+
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(readxl)
+library(sf)       # for some map stuff, Julian will talk more about the details
+d <- read_excel("data-raw/DATASET_cuba.xlsx")
+# You could also try this, if you do not have the excel file on your local computer:
+d <- read_csv("https://heima.hafro.is/~einarhj/data/another_set_of_lat_long.csv")
+```
+
+
+Let's take a peek of the data:
+```{r}
+d |> glimpse()
+```
+
+
+Here we do not have all this fancy stuff like "degrees", "minutes" and "seconds" notation, just spaces. Let't try to test the fancy function on this dataset. First we need to "run" the function:
+
+```{r}
+# This function removes all characters except numerics (0, 1, 2, ... 9) and the "." and puts
+#  a single space instead, then separates out the degrees, minutes and seconds and the
+#  calculates the decimal degrees
+# This ammended function now takes care of if one has N, S, E, W in the original values
+dms2decimmals <- function(x) {
+  
+  # get only letters
+  quarter <- x |> stringr::str_extract("[A-Z]")
+  x <- 
+    tibble::tibble(x = x) |> 
+    dplyr::mutate(x = stringr::str_replace_all(x, "[^0-9.-]", " "),
+           x = stringr::str_squish(x)) |> 
+    tidyr::separate(x, into = c("dd", "mm", "ss"), convert = TRUE, sep = " ") |> 
+    dplyr::mutate(lon = dd + mm / 60 + ss / 3600) |> 
+    dplyr::pull(lon)
+  case_when(quarter == "S" | quarter == "W" ~ -x,
+            .default = x)
+}
+```
+
+Now let's test the function:
+
+```{r}
+d |> 
+  mutate(lat = dms2decimmals(Lat),
+         lon = dms2decimmals(Long)) |> 
+  knitr::kable()
+```
+
+We are happy that the function works on this. One more test of the function, using this fictitious data, each row having different format for coordinate representation:
+
+```{r}
+tibble(Lon = c("82 37 26", "E 32 ° 38' 10.5''", "122°47'42.02''"),
+       Lat = c("21 49 35", "S 00 ° 02' 35.0''", "39°04'33.85''"),
+       country = c("Cuba", "Uganda", "China")) |> 
+  mutate(lon = dms2decimmals(Lon),
+         lat = dms2decimmals(Lat)) |> 
+  knitr::kable()
+```
+
+So I get decimal degrees in all cases. Question is still if the values are correct. One way to do the final double check is to repeat the calculation by hand.
+
+Smallprint: The function works only works if your data is in degrees-minutes-seconds. If your data is e.g. in degrees-minutes-decimalminutes you may get a numeric value but it may be incorrect!
+

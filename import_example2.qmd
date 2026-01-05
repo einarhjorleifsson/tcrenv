@@ -1,0 +1,139 @@
+---
+title: "Import example2"
+error: true
+embed-resources: true
+---
+
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(readxl)
+library(sf)       # for some map stuff, Julian will talk more about the details
+d <- read_excel("data-raw/Coordinates for the map.xlsx")
+# You could also try this, if you do not have the excel file on your local computer:
+# d <- read_csv("https://heima.hafro.is/~einarhj/data/some_messy_map_coordinates.csv")
+```
+
+
+Let's take a peek of the data:
+```{r}
+d |> glimpse()
+```
+
+
+We take note that the coordinates are with all this fancy stuff like "degrees", "minutes" and "seconds" notation. Since we often come across such data we may try to generate first a function:
+
+```{r}
+# This function removes all characters except numerics (0, 1, 2, ... 9) and the "." and puts
+#  a single space instead, then separates out the degrees, minutes and seconds and the
+#  calculates the decimal degrees
+dms2decimmals <- function(x) {
+  tibble::tibble(x = x) |> 
+    dplyr::mutate(x = stringr::str_replace_all(x, "[^0-9.-]", " "),
+           x = stringr::str_squish(x)) |> 
+    tidyr::separate(x, into = c("dd", "mm", "ss"), convert = TRUE, sep = " ") |> 
+    dplyr::mutate(lon = dd + mm / 60 + ss / 3600) |> 
+    dplyr::pull(lon)
+}
+```
+
+Now let's use this function in a code flow, first just a demo to see the output:
+
+```{r}
+d |> 
+  mutate(lat = dms2decimmals(Latitude),
+         lon = dms2decimmals(Longitude)) |> 
+  knitr::kable()
+```
+
+Now, let's look carefully the lat and the lon data. What do you notice is wrong given the orignal data??
+
+The problem here is that the function always gives us positive numbers. But in decimal degrees if the latitude is in the southern hemisphere that should give us a negative decimal degrees. Same would be if the longitude is west of the Greenwich line.
+
+Let's fix the function above to take that into account:
+
+```{r}
+# This function removes all characters except numerics (0, 1, 2, ... 9) and the "." and puts
+#  a single space instead, then separates out the degrees, minutes and seconds and the
+#  calculates the decimal degrees
+# This ammended function now takes care of if one has N, S, E, W in the original values
+dms2decimmals <- function(x) {
+  
+  # get only letters
+  quarter <- x |> stringr::str_extract("[A-Z]")
+  x <- 
+    tibble::tibble(x = x) |> 
+    dplyr::mutate(x = stringr::str_replace_all(x, "[^0-9.-]", " "),
+           x = stringr::str_squish(x)) |> 
+    tidyr::separate(x, into = c("dd", "mm", "ss"), convert = TRUE, sep = " ") |> 
+    dplyr::mutate(lon = dd + mm / 60 + ss / 3600) |> 
+    dplyr::pull(lon)
+  case_when(quarter == "S" | quarter == "W" ~ -x,
+            .default = x)
+}
+```
+
+Now let's test again:
+
+```{r}
+d |> 
+  mutate(lat = dms2decimmals(Latitude),
+         lon = dms2decimmals(Longitude)) |> 
+  knitr::kable()
+```
+
+If we are happy we can overwrite the variables and store the object (read: table) under the same name.
+
+```{r}
+d <-
+  d |> 
+  mutate(Latitude = dms2decimmals(Latitude),
+         Longitude = dms2decimmals(Longitude))
+d
+```
+
+Let's clean the names (we could also have done this right after importing the file):
+
+```{r}
+d <- 
+  d |> 
+  clean_names()
+```
+
+Now we could do a plot:
+
+```{r}
+d |> 
+  ggplot(aes(longitude, latitude)) +
+  geom_point(colour = "red") +
+  geom_text(aes(label = name_of_island), 
+            angle = 45) +
+  coord_quickmap()
+```
+
+Almost there, but we may want a background map of Lake Victoria. Let's get one:
+
+```{r}
+# https://www.nature.com/articles/s41597-022-01742-3
+# https://dataverse.harvard.edu/dataverse/GLWNB-2020
+lv <- 
+  read_sf("https://heima.hafro.is/~einarhj/data/lake_victoria_shoreline.gpkg")
+```
+
+And redo the plot:
+
+```{r}
+ggplot() +
+  geom_sf(data = lv,
+          fill = "lightblue") +
+  geom_point(data = d,
+             aes(longitude, latitude),
+             colour = "red") +
+  #geom_text(data = d,
+  #          aes(longitude, latitude, label = name_of_island), 
+  #          angle = 0) +
+  coord_sf(xlim = c(32, 33), ylim = c(-0.2, 0.4)) +
+  labs(x = NULL, y = NULL)
+```
+

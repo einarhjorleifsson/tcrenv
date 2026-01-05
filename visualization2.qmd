@@ -17,13 +17,11 @@ w <- read_csv(file = "ftp://ftp.hafro.is/pub/data/csv/minke.csv")
 ```
 
 ```{r, message = FALSE, warning = FALSE, results='hide'}
-library(geo)
 library(maps)
 library(mapdata)
-library(lubridate)
 library(tidyverse)
 library(patchwork)
-w <- read_csv(file = "ftp://ftp.hafro.is/pub/data/csv/minke.csv")
+w <- read_csv(file = "https://heima.hafro.is/~einarhj/data/minke.csv")
 ```
 
 # Getting started
@@ -336,6 +334,8 @@ station |>
   coord_quickmap()
 ```
 
+:::
+
 Asked in class: "How do you make this plot pretty?"
 
 One trial:
@@ -380,5 +380,32 @@ station |>
   labs(x = NULL, y = NULL, fill = "Cod\n[kg/tow]")
 ```
 
-:::
+
+
+
+## Quick bit
+
+```{r}
+my_country <- map_data("world", region = "Cuba")
+my_country |> glimpse()
+my_country |> count(group, subregion)
+p <- 
+  ggplot() +
+  geom_polygon(data = my_country,
+                aes(x = long, y = lat, group = subregion),
+                fill = "grey") +
+  labs(x = NULL, y = NULL)
+p
+# "fix" the aspect ration
+p1 <- p + coord_quickmap()
+p1
+# add some data to map
+p1 +
+  geom_point(aes(x = -80, y = 21.75), colour = "red", size = 10)
+# limit the area plotted
+p1 +
+  coord_quickmap(xlim = c(-85, -82.5), ylim = c(21.5, 23)) +
+  geom_point(aes(x = -83.5, y = 22), colour = "red", size = 10)
+```
+
 

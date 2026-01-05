@@ -1,0 +1,109 @@
+---
+title: "Import example"
+error: true
+embed-resources: true
+---
+
+
+```{r}
+library(tidyverse)
+library(readxl)
+abu <- read_excel("data-raw/Abundance.xlsx")
+```
+
+The message we get here means that there are two columns with the name "Nebalia bipes". What read_excel does is names the first occurrence as "Nebalia bipes...125" and the second "Nebalia bipes...147". The number refer to the column row number in the initial data.
+We could fix this in R or what may be simpler, fix this in the excel sheet (delete one colum, after making sure that both actually contain the same data). And then re-import in the data.
+
+Here we will not do what we should be doing, just so we can proceed with the demo. Let's take a peek of the data:
+```{r}
+abu |> glimpse()
+```
+
+Note that the variable `Ampithoe valida` is imported as a character. This is because there is at least one of the value not recognized as numeric. It so happens that the first record contains "a", so therefor we get this a character. Again one may do some coding in R but better would be to correct this stuff in excel and then re-import the data.
+
+Here we will just fix the stuff in R, so we can proceed with the next step in this demo:
+
+```{r}
+abu <- 
+  abu |> 
+  mutate(`Ampithoe valida` = ifelse(`Ampithoe valida` == "a", "0", `Ampithoe valida`),
+         `Ampithoe valida` = as.numeric(`Ampithoe valida`))
+abu |> glimpse()
+```
+
+We take note that the coordinates are with all this fancy stuff like "degrees", "minutes" and "seconds" notation. Since we often come across such data we may try to generate first a function:
+
+```{r}
+# This function removes all characters except numerics (0, 1, 2, ... 9) and the "." and puts
+#  a single space instead, then separates out the degrees, minutes and seconds and the
+#  calculates the decimal degrees
+dms2decimmals <- function(x) {
+  tibble::tibble(x = x) |> 
+    dplyr::mutate(x = stringr::str_replace_all(x, "[^0-9.-]", " "),
+           x = stringr::str_squish(x)) |> 
+    tidyr::separate(x, into = c("dd", "mm", "ss"), convert = TRUE, sep = " ") |> 
+    dplyr::mutate(lon = dd + mm / 60 + ss / 3600) |> 
+    dplyr::pull(lon)
+}
+```
+
+Now let's use this function in a code flow, first just a demo to see the output:
+
+```{r}
+abu |> 
+  select(Site:Lon) |> 
+  mutate(lat = dms2decimmals(Lat),
+         lon = dms2decimmals(Lon)) |> 
+  glimpse()
+```
+
+If we are happy we use it and store the object via:
+
+```{r}
+abu <- 
+  abu |> 
+  mutate(Lat = dms2decimmals(Lat),
+         Lon = dms2decimmals(Lon)) 
+```
+
+We could now get a plot of the station location:
+
+```{r}
+abu |> 
+  ggplot(aes(Lon, Lat)) +
+  geom_point() +
+  coord_quickmap()
+```
+
+We could also try to add labels
+
+```{r}
+abu |> 
+  ggplot(aes(Lon, Lat)) +
+  geom_point(colour = "red") +
+  geom_text(aes(label = Site), angle = 45) +
+  coord_quickmap()
+```
+
+
+Now everything is ready to make this a long table (i.e. a tidy-table):
+
+```{r}
+abu <- 
+  abu |> 
+  pivot_longer(cols = -c(Site:Month), names_to = "species", values_to = "abundance")
+abu |> glimpse()
+```
+
+So now we have at least a tidy table. The table is however composed on station information and then detail biological information. So column from Site to Month are repeated as many times are there are number of species. Lets for now not worry about this for now, we can still do stuff in R with this type of a data structure.
+
+Like we could get some summary statistics by species and Site:
+
+```{r}
+abu |> 
+  group_by(Site, species) |> 
+  reframe(n = n(),
+          mean = mean(abundance),
+          sd = sd(abundance))
+```
+

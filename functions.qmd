@@ -1,0 +1,160 @@
+---
+title: "Functions"
+warning: false
+message: false
+---
+
+We often need to create a same code structure more than once or twice. If so it may be time to create our own function. For all practical purposes a function is just R-code wrapped into a specific name. Here we are actually not going to deal with some generic introduction into function but dive directly into a practidal example that looks like it is useful for fisheries data.
+
+## An example of a function working on coordinates
+
+In fisheries science we often have coordinates indicating the location of a sampling site. Coordinates are quite often written as e.g. "122°47'42.02''" or some variant thero. Here we have degrees-minutes-second format each ending "standard" but wonky characters. Now if we were e.g. create a plot of sampling location we would first need to convert this to a numerical value, here decimal degrees.
+
+Let's get some example data with coordinates:
+
+```{r}
+library(tidyverse)
+ex1 <- read_csv("https://heima.hafro.is/~einarhj/data/coordinates_example1.csv")
+ex1
+```
+
+So here we have longitude and latitude in degrees-minutes-seconds and we want to convert it to decimal degrees. Given this data we can think that the code need to:
+
+* Remove all the wonky bits.
+* Then work on converting the minutes and second parts into decimal degrees.
+* Then add these elements to the decimal decimal part to get the final decimal degrees.
+
+An example of a code sequence that could do such a thing, here wrapped into a function could be something like this:
+
+```{r}
+#' Convert degrees-minutes-seconds to decimal degrees
+#' 
+#' This function removes all characters except numerics (0, 1, 2, ... 9) and 
+#' the "." and puts a single space instead, then separates out the degrees, 
+#' minutes and seconds and then calculates the decimal degrees
+#' 
+dms2decimmals <- function(x) {
+  tibble::tibble(x = x) |> 
+    dplyr::mutate(x = stringr::str_replace_all(x, "[^0-9.-]", " "),
+           x = stringr::str_squish(x)) |> 
+    tidyr::separate(x, into = c("dd", "mm", "ss"), convert = TRUE, sep = " ") |> 
+    dplyr::mutate(lon = dd + mm / 60 + ss / 3600) |> 
+    dplyr::pull(lon)
+}
+```
+
+Now you do not need to worry about the code inside the function-part, you only need to know what the function does.
+
+Let's give this function a try:
+
+```{r}
+ex1 |> 
+  mutate(lon = dms2decimmals(Lon),
+         lat = dms2decimmals(Lat)) |> 
+  knitr::kable()
+```
+
+Take note that we have used the same function both for the longitude and the latitude. Now we should of course check if the code does the right thing, like by taking few records and do the calculation "by hand". But let's for now trust the person that generated this function.
+
+Now let's get another example which has coordinates:
+
+```{r}
+ex2 <- read_csv("https://heima.hafro.is/~einarhj/data/some_messy_map_coordinates.csv")
+ex2
+```
+
+Here we have a little bit of different construct than we saw in the first example, it does not look as orderly but now we also have things like "N" and "E". Let's see if our function above works:
+
+```{r}
+ex2 |> 
+  select(Longitude, Latitude) |> 
+  mutate(lon = dms2decimmals(Longitude),
+         lat = dms2decimmals(Latitude))
+```
+
+So we got some decimal numbers. But look carefully the lat and the lon data. What do you notice is wrong given the orignal data??
+
+The problem here is that the function always gives us positive numbers. But in decimal degrees if the latitude is in the southern hemisphere that should give us a negative decimal degrees. Same would be if the longitude is west of the Greenwich line.
+
+Let's fix the function above to take that into account:
+
+```{r}
+#' Convert degrees-minutes-seconds to decimal degrees
+#' 
+#' This function removes all characters except numerics (0, 1, 2, ... 9) and 
+#' the "." and puts a single space instead, then separates out the degrees, 
+#' minutes and seconds and then calculates the decimal degrees
+#' 
+dms2decimmals <- function(x) {
+  
+  # get only letters
+  quarter <- x |> stringr::str_extract("[A-Z]")
+  x <- 
+    tibble::tibble(x = x) |> 
+    dplyr::mutate(x = stringr::str_replace_all(x, "[^0-9.-]", " "),
+           x = stringr::str_squish(x)) |> 
+    tidyr::separate(x, into = c("dd", "mm", "ss"), convert = TRUE, sep = " ") |> 
+    dplyr::mutate(lon = dd + mm / 60 + ss / 3600) |> 
+    dplyr::pull(lon)
+  case_when(quarter == "S" | quarter == "W" ~ -x,
+            .default = x)
+}
+```
+
+Now let's test again:
+
+```{r}
+ex2 |> 
+  select(Longitude, Latitude) |> 
+  mutate(lon = dms2decimmals(Longitude),
+         lat = dms2decimmals(Latitude)) |> 
+  knitr::kable()
+```
+
+Now since we changed the function we may want to test if it still works on first example:
+
+```{r}
+ex1 |> 
+  mutate(lon = dms2decimmals(Lon),
+         lat = dms2decimmals(Lat))
+```
+
+"Look's ok", but remember do still some double checking
+
+Another example we sometime see is the decimal, minute and second in one column but separated by space. Like:
+
+```{r}
+ex3 <- 
+  tibble(Long = c("82 38 58", "82 38 46", "82 38 34"),
+         Lat =  c("22 00 08", "22 00 29", "21 56 41"))
+ex3
+```
+
+Let's use the function:
+
+```{r}
+ex3 |> 
+  mutate(lon = dms2decimmals(Long),
+         lat = dms2decimmals(Lat)) |> 
+  knitr::kable()
+```
+
+Again, seems ok.
+
+
+We are happy that the function works on the above examples. One more test of the function, using this fictitious data, each row having different format for coordinate representation:
+
+```{r}
+tibble(Lon = c("82 37 26", "E 32 ° 38' 10.5''", "122°47'42.02''"),
+       Lat = c("21 49 35", "S 00 ° 02' 35.0''", "39°04'33.85''"),
+       country = c("Cuba", "Uganda", "China")) |> 
+  mutate(lon = dms2decimmals(Lon),
+         lat = dms2decimmals(Lat)) |> 
+  knitr::kable()
+```
+
+So I get decimal degrees in all cases, so it seems that it also works on mixture of cases within the same variable.
+
+Smallprint: The function works only works if your data is in degrees-minutes-seconds. If your data is e.g. in degrees-minutes-decimalminutes you may get a numeric value but it may be incorrect!
+
+

@@ -1,0 +1,12 @@
+---
+title: "Some adhoc stuff"
+echo: FALSE
+message: FALSE
+warning: FALSE
+---
+
+* [https://heima.hafro.is/~einarhj/edu/2025groftp/data-raw/DATASET_kenya.R](https://heima.hafro.is/~einarhj/edu/2025groftp/data-raw/DATASET_kenya.R)
+* [https://heima.hafro.is/~einarhj/edu/2025groftp/data-raw/DATASET_liberia.R](https://heima.hafro.is/~einarhj/edu/2025groftp/data-raw/DATASET_liberia.R)
+* [https://heima.hafro.is/~einarhj/edu/2025groftp/data-raw/DATASET_srilanka.R](https://heima.hafro.is/~einarhj/edu/2025groftp/data-raw/DATASET_srilanka.R)
+
+* [https://heima.hafro.is/~einarhj/edu/2025groftp/data-raw/joins_and_binds.R](https://heima.hafro.is/~einarhj/edu/2025groftp/data-raw/joins_and_binds.R)

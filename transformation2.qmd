@@ -86,14 +86,15 @@ w |>
 
 - Calculate the number of observations and minimum, median, mean, standard deviation and standard error of whale lengths in each year
 - The function names in R are:
-- n
-- min
-- max
-- median
-- mean
-- sd
+  - n
+  - min
+  - max
+  - median
+  - mean
+  - sd
 
-The function for standard error is not availble in R. A remedy is that you use college statistical knowledge to derive them from the appropriate variables you derived above.
+The function for standard error is not availble in R. A remedy is that you use college statistical knowledge to derive them from the appropriate variables you derived above. The Wikipedia page for [Standard error](https://en.wikipedia.org/wiki/Standard_error) is one place to check.
+
 :::
 
 [This](https://cran.r-project.org/doc/contrib/Short-refcard.pdf) may help to find different basic statistics function.
@@ -290,15 +291,6 @@ station %>%
 ```{r echo = FALSE}
 knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/full_join.png")
 ```
-
-```{r}
-station %>% 
-  full_join(biological %>% 
-              filter(species == "monkfish")) %>% 
-  select(id, species:n)
-```
-
-Here all the stations records are retained irrepsective if monkfish was caught or not.
 
 ::: callout-tip
 #### Excercise

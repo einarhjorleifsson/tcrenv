@@ -2,8 +2,8 @@
 title: "Import and export"
 message: FALSE
 warning: FALSE
----
 
+---
 ```{r, width = 150, echo = FALSE}
 knitr::include_graphics("https://heima.hafro.is/~einarhj/crfmr_img/data_science.png")
 ```
@@ -112,8 +112,8 @@ w <- read_csv('data-raw/minke.csv')
 One can also use absolute paths like:
 
 ```{r eval = FALSE}
-read_csv("~/edu/crfmr/data-raw/minke.csv")
-read_csv("C:/Users/username/Documents/edu/crfmr/data-raw/minke.csv")
+read_csv("~/edu/crfmr/data-raw/minke.csv")      # if on Linux/Mac
+read_csv("C:/Users/username/Documents/edu/crfmr/data-raw/minke.csv") # if on Windose
 ```
 
 Absolute paths are however specific to each computer directory structure and it is thus not recommended to use if you are distributing the project to other collaborators.

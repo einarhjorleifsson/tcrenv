@@ -23,6 +23,8 @@ By the end of the course, the participants:
 * Will be able to clean, manipulate, explore, summarize and graph data.
 * Will be able to apply the principle of reproducible analysis and report writing from A through Z which are then deliverable through any of the current three common deliverable formats: .html, .pdf and .docx.
 
+einar.hjorleifsson@gmail.com
+
 ## Agenda
 
 This is space in the making meaning that the content is **preliminary**.
@@ -57,18 +59,29 @@ This is space in the making meaning that the content is **preliminary**.
 - [Reproducible research with R](reproducable.qmd)
 
 
-#### 2025-01-13 10:00 - 12:00  (Monday)
+#### 2025-01-13 10:00 - 16:00  (Monday)
 
-... pending
+teacher was sick
 
-#### 2025-01-13 13:00 - 16:00  (Monday)
 
-... pending
+#### 2025-01-15 10:00 - 16:00  (Wednesday)
 
-#### 2025-01-15 13:00 - 16:00  (Wednesday)
-
-... pending
+* [Data transformation 2 - second half](transformation2.qmd)
+* [Tidy dataframes](tidy.qmd)
 
 #### 2025-01-16 09:00 - 12:00  (Thursday)
 
-... pending
+* [Functions](functions.qmd)
+
+#### 2025-02-XX
+
+*Ad hoc* meetings once you are in your project. We could think of this in two ways:
+
+* Common session where all attend - you have to think about topics to cover and I will try to accomodate them
+* One on one session - individual session where I try to help a fellow with importing and tidying your data structure. Remember that it is your superviser that should really help you with this.
+
+Now, keep in mind that my time for this is not limitless.
+
+## Bit
+
+[bit](bit.qmd)
