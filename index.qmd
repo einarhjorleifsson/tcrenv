@@ -6,11 +6,11 @@ format:
     toc: false
 ---
 
-## Introduction to R - GROFTP, winter 2025
+## Introduction to R - GROFTP, winter 2026
 
 The course is aimed at fellows with no or very limited experience in R. It will cover the fundamental/generic basis of the grammar of data and graphics and reproducible document writing where R is used as the sole working medium. The framework introduced is based on using a set of packages that use internally consistent R-dialect that falls under the tidyverse umbrella.
 
-This space is **here**: [https://heima.hafro.is/~einarhj/edu/2025groftp](https://heima.hafro.is/~einarhj/edu/2025groftp)
+This space is **here**: [https://heima.hafro.is/~einarhj/edu/2026ftp](https://heima.hafro.is/~einarhj/edu/2026ftp)
 
 
 ### Objective
@@ -29,59 +29,41 @@ einar.hjorleifsson@gmail.com
 
 This is space in the making meaning that the content is **preliminary**.
 
-#### 2025-01-06 10:00 - 12:00  (Monday)
+#### 2026-01-06 09:00 - 12:00  (Tuesday)
 
 - [Introduction](intro.qmd)
 
-#### 2025-01-06 13:00 - 16:00  (Monday)
+#### 2025-01-06 14:00 - 16:00  (Tuesday)
 
 - [Getting started with ggplot](visualization1.qmd)
 
 
-#### 2025-01-07 09:00 - 12:00  (Tuesday)
+#### 2026-01-07 09:00 - 12:00  (Wednesday)
 
 - [Data transformation 1](transformation1.qmd)
 
-#### 2025-01-08 09:00 - 12:00  (Wednesday)
+#### 2026-01-08 09:00 - 12:00  (Thursday)
 
 - [Data transformation 2](transformation2.qmd)
 
-#### 2025-01-09 09:00 - 12:00  (Thursday)
+#### 2026-01-09 09:00 - 12:00  (Friday)
 
 - [Data import](import.qmd)
 
-#### 2025-01-10 10:00 - 12:00  (Friday)
+#### 2026-01-09 13:00 - 16:00  (Friday)
 
 - [More ggplot - maps](visualization2.qmd)
 
-#### 2025-01-10 13:00 - 16:00  (Friday)
+#### 2026-01-12 09:00 - 12:00  (Monday)
 
 - [Reproducible research with R](reproducable.qmd)
 
-
-#### 2025-01-13 10:00 - 16:00  (Monday)
-
-teacher was sick
-
-
-#### 2025-01-15 10:00 - 16:00  (Wednesday)
+#### 2026-01-15 09:00 - 12:00  (Thursday)
 
 * [Data transformation 2 - second half](transformation2.qmd)
 * [Tidy dataframes](tidy.qmd)
 
-#### 2025-01-16 09:00 - 12:00  (Thursday)
+#### 2026-01-16 09:00 - 12:00  (Friday)
 
 * [Functions](functions.qmd)
 
-#### 2025-02-XX
-
-*Ad hoc* meetings once you are in your project. We could think of this in two ways:
-
-* Common session where all attend - you have to think about topics to cover and I will try to accomodate them
-* One on one session - individual session where I try to help a fellow with importing and tidying your data structure. Remember that it is your superviser that should really help you with this.
-
-Now, keep in mind that my time for this is not limitless.
-
-## Bit
-
-[bit](bit.qmd)

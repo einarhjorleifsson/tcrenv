@@ -1,5 +1,6 @@
 system("quarto preview --render all --no-watch-inputs --no-browse")
-system("cp -r _site/* /net/hafri.hafro.is/export/home/hafri/einarhj/public_html/edu/2025groftp/.")
-system("chmod -R a+rX /net/hafri.hafro.is/export/home/hafri/einarhj/public_html/edu/2025groftp")
+# system("mkdir /home/hafri/einarhj/public_html/edu/2026ftp")
+system("cp -r _site/* /home/hafri/einarhj/public_html/edu/2026ftp/.")
+system("cp -r data-raw /home/hafri/einarhj/public_html/edu/2026ftp/.")
+system("chmod -R a+rX /home/hafri/einarhj/public_html/edu/2026ftp")
 
-system("cp -rp data-raw /net/hafri.hafro.is/export/home/hafri/einarhj/public_html/edu/2025groftp/.")
