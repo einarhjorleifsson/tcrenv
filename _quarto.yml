@@ -1,5 +1,6 @@
 project:
   type: website
+  output-dir: _site
 
 website:
   title: "tcrenv"
@@ -23,6 +24,7 @@ format:
     theme: flatly
     css: styles.css
     toc: true
-
+execute:
+  freeze: false
 
 

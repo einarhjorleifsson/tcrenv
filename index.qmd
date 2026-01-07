@@ -46,11 +46,11 @@ This is space in the making meaning that the content is **preliminary**.
 
 - [Data transformation 2](transformation2.qmd)
 
-#### 2026-01-09 09:00 - 12:00  (Friday)
+#### 2026-01-08 13:00 - 16:00  (Thursday)
 
 - [Data import](import.qmd)
 
-#### 2026-01-09 13:00 - 16:00  (Friday)
+#### 2026-01-09 09:00 - 12:00  (Friday)
 
 - [More ggplot - maps](visualization2.qmd)
 
